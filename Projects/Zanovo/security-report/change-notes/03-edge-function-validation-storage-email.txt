@@ -1,0 +1,61 @@
+Step 3: Supabase Edge Function for validation, storage, and email
+
+Changed file:
+/Users/tk/Claude/Projects/Zanovo/supabase/functions/send-lead-email/index.ts
+
+What changed:
+- Added a Deno Edge Function for lead submissions.
+- Added server-side validation for name, business, email, phone, and message.
+- Added CR/LF stripping for fields that can reach email headers.
+- Added request size limit handling.
+- Added CORS allow-listing through ALLOWED_ORIGINS.
+- Added IP/email-based rate limiting through a hashed identifier.
+- Added secure insertion into public.leads using SUPABASE_SERVICE_ROLE_KEY.
+- Added direct Zoho SMTP email sending through nodemailer.
+- Added plain-text and HTML email body generation.
+- Escaped user content before placing it in the HTML email body.
+- Used a fixed authenticated From address and user-submitted email only as replyTo.
+
+Security impact:
+- The server now validates every submission, not just the browser.
+- The service role key stays inside Supabase secrets and is never exposed to the browser.
+- Email header injection risk is reduced by stripping CR/LF and using controlled From values.
+- HTML email injection risk is reduced by escaping user-submitted fields.
+- Spam and database flooding are reduced by rate limiting.
+
+Important code shape now:
+
+import { createClient } from "npm:@supabase/supabase-js@2";
+import nodemailer from "npm:nodemailer@6.9.16";
+
+const stripHeaderChars = (value: string) => value.replace(/[\r\n]+/g, " ").trim();
+
+const sendZohoSmtpEmail = async (lead: Lead) => {
+  const smtpUser = Deno.env.get("ZOHO_SMTP_USER");
+  const smtpPass = Deno.env.get("ZOHO_SMTP_PASS");
+  const to = Deno.env.get("LEAD_EMAIL_TO");
+
+  if (!smtpUser || !smtpPass || !to) {
+    console.warn("Zoho SMTP is not configured; lead stored without email notification.");
+    return;
+  }
+
+  const transporter = nodemailer.createTransport({
+    host,
+    port,
+    secure: port === 465,
+    auth: {
+      user: smtpUser,
+      pass: smtpPass,
+    },
+  });
+
+  await transporter.sendMail({
+    from: `"${fromName}" <${fromAddress}>`,
+    to,
+    replyTo: lead.email,
+    subject: `New Zanovo lead: ${lead.business}`,
+    text: emailBodyText(lead),
+    html: emailBodyHtml(lead),
+  });
+};

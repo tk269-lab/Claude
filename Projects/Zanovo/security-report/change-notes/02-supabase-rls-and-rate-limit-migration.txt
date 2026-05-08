@@ -1,0 +1,38 @@
+Step 2: Supabase RLS, constraints, and rate-limit migration
+
+Changed file:
+/Users/tk/Claude/Projects/Zanovo/supabase/migrations/202605080001_harden_leads.sql
+
+What changed:
+- Created public.leads if it did not already exist.
+- Added database constraints for required field length, email format, phone format, and message length.
+- Enabled and forced Row Level Security on public.leads.
+- Dropped common permissive public policies.
+- Revoked anon and authenticated access to public.leads.
+- Granted leads table access to service_role only.
+- Created public.lead_rate_limits for hashed rate-limit identifiers.
+- Enabled and forced RLS on public.lead_rate_limits.
+- Created public.check_lead_rate_limit() as a security definer RPC for the Edge Function.
+
+Security impact:
+- Anonymous browser clients cannot read, update, delete, or directly insert leads.
+- The Edge Function is the only intended submission path.
+- Database constraints protect against oversized or malformed direct submissions.
+- Public form abuse is throttled through the rate-limit table and RPC.
+
+Important code shape now:
+
+alter table public.leads enable row level security;
+alter table public.leads force row level security;
+
+revoke all on table public.leads from anon;
+revoke all on table public.leads from authenticated;
+grant insert on table public.leads to service_role;
+grant select on table public.leads to service_role;
+
+create table if not exists public.lead_rate_limits (
+  identifier_hash text primary key,
+  window_start timestamptz not null default now(),
+  request_count integer not null default 1,
+  updated_at timestamptz not null default now()
+);

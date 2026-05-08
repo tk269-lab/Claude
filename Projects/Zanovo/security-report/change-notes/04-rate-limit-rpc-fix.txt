@@ -1,0 +1,26 @@
+Step 4: Rate-limit RPC parameter fix
+
+Changed files:
+/Users/tk/Claude/Projects/Zanovo/supabase/migrations/202605080002_fix_lead_rate_limit_rpc.sql
+/Users/tk/Claude/Projects/Zanovo/supabase/functions/send-lead-email/index.ts
+
+What changed:
+- Added a second migration that drops and recreates public.check_lead_rate_limit().
+- Renamed RPC parameters to p_identifier_hash, p_max_requests, and p_window_seconds.
+- Updated the Edge Function RPC call to use the new parameter names.
+
+Why it changed:
+- The first function used parameter names that could collide with table column names in Postgres.
+- The deployed Edge Function returned "Could not process submission" until the RPC was recreated and the function call was updated.
+
+Security impact:
+- Rate limiting now executes reliably.
+- The public form can reject repeated submissions instead of failing the whole request path.
+
+Important code shape now:
+
+const { data: rateLimitAllowed, error: rateLimitError } = await supabase.rpc("check_lead_rate_limit", {
+  p_identifier_hash: identifierHash,
+  p_max_requests: 5,
+  p_window_seconds: 3600,
+});

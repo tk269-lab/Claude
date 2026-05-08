@@ -1,0 +1,56 @@
+Step 1: Frontend contact form hardening
+
+Changed file:
+/Users/tk/Claude/Projects/Zanovo/src/App.jsx
+
+What changed:
+- Removed the active frontend import of ./lib/supabase, which fixed the Vite pre-transform error caused by the missing @supabase/supabase-js package.
+- Removed the direct browser-side insert into the Supabase leads table.
+- Added FIELD_LIMITS for name, business, email, phone, and message.
+- Added normalizeLead(), validateLead(), and getLeadFunctionUrl().
+- Updated handleChange() to enforce max lengths before submission.
+- Updated handleSubmit() to validate locally and POST to the Supabase Edge Function only.
+- Added a hidden honeypot field named website.
+- Added maxLength attributes to visible form inputs.
+- Changed production error logging so detailed errors only print in development.
+
+Security impact:
+- The browser no longer has direct write access to the leads table.
+- Input size limits are enforced before network submission.
+- Basic bot submissions are reduced by the honeypot field.
+- Sensitive implementation details are less likely to appear in production browser consoles.
+
+Important code shape now:
+
+const EMPTY_FORM = { name: "", business: "", email: "", phone: "", message: "", website: "" };
+
+const FIELD_LIMITS = {
+  name: 120,
+  business: 160,
+  email: 254,
+  phone: 40,
+  message: 2000,
+};
+
+const getLeadFunctionUrl = () => {
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  if (!supabaseUrl) throw new Error("Missing VITE_SUPABASE_URL");
+  return `${supabaseUrl.replace(/\/$/, "")}/functions/v1/send-lead-email`;
+};
+
+The form now calls:
+
+fetch(getLeadFunctionUrl(), {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+  },
+  body: JSON.stringify({
+    name: lead.name,
+    business: lead.business,
+    email: lead.email,
+    phone: lead.phone,
+    message: lead.message || null,
+  }),
+});

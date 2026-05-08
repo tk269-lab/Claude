@@ -1,0 +1,31 @@
+Step 6: Verification results
+
+Commands and checks run:
+- npm run build
+- npm run lint
+- npm run dev -- --host 127.0.0.1
+- curl POST tests against the deployed Supabase Edge Function
+- curl OPTIONS preflight tests against the deployed Supabase Edge Function
+- supabase db push
+- supabase functions deploy send-lead-email
+- supabase secrets list
+
+Results:
+- Production build passed.
+- ESLint passed.
+- Vite dev server started successfully.
+- Supabase Edge Function deployment succeeded.
+- Database migration for the RPC fix was applied successfully.
+- Live Edge Function test returned {"ok":true}.
+- Live Zoho SMTP test returned {"ok":true}.
+- Browser-origin CORS test from http://127.0.0.1:5175 returned correct Access-Control-Allow-Origin.
+- Localhost browser-equivalent POST from http://127.0.0.1:5175 returned {"ok":true}.
+
+Issues encountered and fixed:
+- Missing @supabase/supabase-js dependency in the frontend import path.
+- Direct browser-side leads table insert.
+- Incorrect Supabase project host using .supabase.com instead of .supabase.co.
+- Missing RATE_LIMIT_SALT and ALLOWED_ORIGINS secrets.
+- RPC parameter mismatch in check_lead_rate_limit().
+- Zoho SMTP "535 Authentication Failed"; fixed after updating SMTP credentials.
+- CORS mismatch for 127.0.0.1 dev server origin.

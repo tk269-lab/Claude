@@ -1,0 +1,190 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Zanovo Security Hardening Report</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+      color: #111827;
+      line-height: 1.45;
+      margin: 42px;
+      max-width: 860px;
+    }
+    h1 {
+      color: #0A0D12;
+      font-size: 30px;
+      margin-bottom: 6px;
+    }
+    h2 {
+      color: #0A0D12;
+      font-size: 20px;
+      margin-top: 28px;
+      border-bottom: 1px solid #E5E7EB;
+      padding-bottom: 6px;
+    }
+    h3 {
+      font-size: 16px;
+      margin-top: 20px;
+    }
+    .meta {
+      color: #6B7280;
+      font-size: 13px;
+      margin-bottom: 28px;
+    }
+    .status {
+      display: inline-block;
+      background: #ECFDF5;
+      border: 1px solid #A7F3D0;
+      color: #065F46;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 13px;
+    }
+    code, pre {
+      font-family: "SFMono-Regular", Consolas, monospace;
+      font-size: 12px;
+    }
+    pre {
+      background: #F9FAFB;
+      border: 1px solid #E5E7EB;
+      padding: 12px;
+      border-radius: 6px;
+      overflow-wrap: break-word;
+      white-space: pre-wrap;
+    }
+    a {
+      color: #C2410C;
+      text-decoration: none;
+      overflow-wrap: anywhere;
+    }
+    ul {
+      padding-left: 20px;
+    }
+    li {
+      margin: 5px 0;
+    }
+    .step {
+      margin-bottom: 18px;
+      padding: 12px 14px;
+      border-left: 4px solid #FF6B00;
+      background: #FFFBF7;
+    }
+  </style>
+</head>
+<body>
+  <h1>Zanovo Security Hardening Report</h1>
+  <div class="meta">Prepared locally for /Users/tk/Claude/Projects/Zanovo on 2026-05-08.</div>
+  <div class="status">Status: implemented, deployed, and verified</div>
+
+  <h2>Executive Summary</h2>
+  <p>
+    The Zanovo contact form was hardened from a direct browser-to-database submission flow into a server-validated Supabase Edge Function workflow.
+    The database was locked down with RLS, field constraints, and private service-role access. The Edge Function now validates input,
+    rate-limits submissions, stores leads securely, and sends lead notifications through Zoho SMTP.
+  </p>
+  <p>
+    The localhost error seen at the end of testing was caused by a CORS origin mismatch between <code>localhost</code> and
+    <code>127.0.0.1</code>. The allowed origins were updated and verified.
+  </p>
+
+  <h2>Work Completed</h2>
+
+  <div class="step">
+    <h3>1. Frontend Contact Form Hardening</h3>
+    <p>
+      Removed the active Supabase browser client dependency, removed direct client inserts into <code>leads</code>,
+      added validation, max lengths, a honeypot field, and function-only submission.
+    </p>
+    <p><strong>Change notes:</strong> <a href="change-notes/01-frontend-contact-form-hardening.txt">01-frontend-contact-form-hardening.txt</a></p>
+    <p><strong>Changed source:</strong> /Users/tk/Claude/Projects/Zanovo/src/App.jsx</p>
+  </div>
+
+  <div class="step">
+    <h3>2. Supabase RLS, Constraints, and Rate Limiting</h3>
+    <p>
+      Added SQL migration to create/harden <code>leads</code>, enforce RLS, revoke anonymous access,
+      create a private rate-limit table, and add a rate-limit RPC.
+    </p>
+    <p><strong>Change notes:</strong> <a href="change-notes/02-supabase-rls-and-rate-limit-migration.txt">02-supabase-rls-and-rate-limit-migration.txt</a></p>
+    <p><strong>Changed source:</strong> /Users/tk/Claude/Projects/Zanovo/supabase/migrations/202605080001_harden_leads.sql</p>
+  </div>
+
+  <div class="step">
+    <h3>3. Edge Function Validation, Storage, and Zoho SMTP</h3>
+    <p>
+      Added and deployed <code>send-lead-email</code>. It validates payloads server-side, rate-limits,
+      inserts through service-role credentials, and sends email through Zoho SMTP with escaped HTML content.
+    </p>
+    <p><strong>Change notes:</strong> <a href="change-notes/03-edge-function-validation-storage-email.txt">03-edge-function-validation-storage-email.txt</a></p>
+    <p><strong>Changed source:</strong> /Users/tk/Claude/Projects/Zanovo/supabase/functions/send-lead-email/index.ts</p>
+  </div>
+
+  <div class="step">
+    <h3>4. Rate-Limit RPC Fix</h3>
+    <p>
+      Added a second migration to recreate the rate-limit RPC with parameter names that do not collide with table columns,
+      then updated the Edge Function RPC call.
+    </p>
+    <p><strong>Change notes:</strong> <a href="change-notes/04-rate-limit-rpc-fix.txt">04-rate-limit-rpc-fix.txt</a></p>
+    <p><strong>Changed sources:</strong> /Users/tk/Claude/Projects/Zanovo/supabase/migrations/202605080002_fix_lead_rate_limit_rpc.sql and /Users/tk/Claude/Projects/Zanovo/supabase/functions/send-lead-email/index.ts</p>
+  </div>
+
+  <div class="step">
+    <h3>5. Environment and Secret Configuration</h3>
+    <p>
+      Corrected the local Supabase URL from <code>.supabase.com</code> to <code>.supabase.co</code>.
+      Set function secrets for rate limiting, CORS, and Zoho SMTP. Secret values are intentionally not recorded.
+    </p>
+    <p><strong>Change notes:</strong> <a href="change-notes/05-env-and-supabase-secrets.txt">05-env-and-supabase-secrets.txt</a></p>
+    <p><strong>Changed source:</strong> /Users/tk/Claude/Projects/Zanovo/.env</p>
+  </div>
+
+  <div class="step">
+    <h3>6. Verification</h3>
+    <p>
+      Verified build, lint, local dev server startup, SQL migration push, function deployment, live Edge Function tests,
+      live Zoho SMTP tests, and localhost CORS tests.
+    </p>
+    <p><strong>Change notes:</strong> <a href="change-notes/06-verification-results.txt">06-verification-results.txt</a></p>
+  </div>
+
+  <h2>Final Verification Results</h2>
+  <ul>
+    <li><code>npm run build</code>: passed.</li>
+    <li><code>npm run lint</code>: passed.</li>
+    <li><code>supabase db push</code>: applied the RPC fix migration.</li>
+    <li><code>supabase functions deploy send-lead-email</code>: deployed successfully.</li>
+    <li>Live Edge Function test: returned <code>{"ok":true}</code>.</li>
+    <li>Live Zoho SMTP test: returned <code>{"ok":true}</code>.</li>
+    <li>Localhost CORS test from <code>http://127.0.0.1:5175</code>: passed.</li>
+  </ul>
+
+  <h2>Remaining Operational Notes</h2>
+  <ul>
+    <li>Keep Zoho SMTP credentials as Supabase secrets only. Do not commit them to source control.</li>
+    <li>For production, keep <code>ALLOWED_ORIGINS</code> limited to the real site domains plus temporary localhost origins only while developing.</li>
+    <li>If the contact form is copied into another project, copy the Edge Function, migrations, and secrets checklist too.</li>
+    <li>The backup file <code>src/zanovo-website_1.jsx</code> still contains the old direct insert pattern, but it is not imported by the active app. Avoid using it as production source unless it is hardened too.</li>
+  </ul>
+
+  <h2>Reusable Future Prompts</h2>
+  <p>Use these prompts in future projects when you want the same style of review and hardening.</p>
+
+  <h3>Security Review Prompt</h3>
+  <pre>Review this codebase for security risks. Prioritize concrete exploitable issues over style feedback. Check authentication, authorization, secrets handling, input validation, database access, CORS, XSS, CSRF, SSRF, rate limiting, logging, and deployment configuration. Give findings by severity with file and line references, then propose fixes.</pre>
+
+  <h3>Implement Fixes Prompt</h3>
+  <pre>Implement the high-priority security fixes directly. Keep a checklist and tick it off as you work. Preserve existing design and behavior where possible. After changes, run build/lint/tests and summarize exactly what changed and what still needs manual deployment or secret configuration.</pre>
+
+  <h3>Supabase Form Hardening Prompt</h3>
+  <pre>Harden this public Supabase contact form. Remove direct browser table inserts, route submissions through a Supabase Edge Function, enable RLS, add DB constraints, server-side validation, rate limiting, safe CORS, and secure email notification. Keep Supabase service-role credentials only in Edge Function secrets.</pre>
+
+  <h3>Deployment Verification Prompt</h3>
+  <pre>Verify the deployed app end to end. Test the local dev server, production build, Supabase migrations, Edge Function deployment, function secrets, CORS preflight, live POST submission, database insert, and email delivery. If something fails, diagnose and patch it directly.</pre>
+
+  <h3>Project Report Prompt</h3>
+  <pre>Create a PDF report of all work done. Include every changed file, every security fix, validation results, deployment steps, remaining risks, and reusable prompts. Create per-step text files for code/config changes and link to them from the report.</pre>
+</body>
+</html>
