@@ -69,7 +69,7 @@ const Nav = () => {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const navLinks = ["Services", "Process", "Results", "About"];
+  const navLinks = ["Services", "Process", "About"];
 
   return (
     <>
@@ -337,65 +337,6 @@ const Process = () => {
               </motion.div>
             </Reveal>
           ))}
-        </div>
-      </div>
-    </section>
-  );
-};
-
-/* ── RESULTS ── */
-const testimonials = [
-  { quote: "Within six weeks of launching our new site, our inquiry volume doubled. The booking system alone saves us hours every week. Zanovo didn't just build us a website — they built us a revenue machine.", name: "Sarah M.", role: "Owner, The Green Apron Bakery", metric: "+200%", metricLabel: "Inquiry increase" },
-  { quote: "I had 47 five-star reviews and a site that looked like 2009. Customers were finding me and leaving. Zanovo completely turned that around. Within a month, I was fully booked two weeks out.", name: "David K.", role: "Founder, CleanRight Plumbing", metric: "3×", metricLabel: "More booked jobs" },
-  { quote: "The team understood exactly what we needed — not just a designer, but someone who gets conversion, customer psychology, and how real small businesses actually work. Genuinely invaluable.", name: "Priya R.", role: "Director, Blossom Wellness Spa", metric: "+158%", metricLabel: "Online bookings" },
-];
-
-const Results = () => {
-  const [active, setActive] = useState(0);
-  useEffect(() => { const t = setInterval(() => setActive(a => (a + 1) % testimonials.length), 6000); return () => clearInterval(t); }, []);
-  return (
-    <section id="results" style={{ background: "#fff", padding: "120px 32px" }}>
-      <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-        <Reveal>
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
-            <div style={{ width: 32, height: 1, background: C_ORANGE }} />
-            <span style={{ fontFamily: FONT_BODY, fontSize: "0.72rem", fontWeight: 600, letterSpacing: "0.22em", color: C_ORANGE, textTransform: "uppercase" }}>Results</span>
-          </div>
-          <h2 style={{ fontFamily: FONT_DISPLAY, fontSize: "clamp(2rem, 4vw, 3.2rem)", color: C_DARK, lineHeight: 1.12, fontWeight: 400, margin: "0 0 64px", maxWidth: 560 }}>Businesses like yours are already growing.</h2>
-        </Reveal>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 64, alignItems: "center" }} className="grid-1-col-mobile">
-          <div>
-            <AnimatePresence mode="wait">
-              <motion.div key={active} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.5 }}>
-                <div style={{ fontFamily: FONT_DISPLAY, fontSize: "3rem", color: C_ORANGE, lineHeight: 1, marginBottom: 8 }}>"</div>
-                <p style={{ fontFamily: FONT_DISPLAY, fontSize: "clamp(1.15rem, 2vw, 1.45rem)", color: C_DARK, lineHeight: 1.65, fontStyle: "italic", margin: "0 0 32px" }}>{testimonials[active].quote}</p>
-                <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                  <div style={{ width: 40, height: 40, borderRadius: "50%", background: `linear-gradient(135deg, ${C_ORANGE}, ${C_ORANGE_LT})`, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT_DISPLAY, color: "#fff", fontSize: "1rem" }}>{testimonials[active].name[0]}</div>
-                  <div>
-                    <div style={{ fontFamily: FONT_BODY, fontWeight: 600, fontSize: "0.88rem", color: C_DARK }}>{testimonials[active].name}</div>
-                    <div style={{ fontFamily: FONT_BODY, fontSize: "0.78rem", color: C_MID, marginTop: 2 }}>{testimonials[active].role}</div>
-                  </div>
-                </div>
-              </motion.div>
-            </AnimatePresence>
-            <div style={{ display: "flex", gap: 8, marginTop: 40 }}>
-              {testimonials.map((_, i) => (<button key={i} onClick={() => setActive(i)} style={{ width: i === active ? 28 : 8, height: 8, borderRadius: 4, background: i === active ? C_ORANGE : C_BORDER, border: "none", cursor: "pointer", transition: "all 0.3s", padding: 0 }} />))}
-            </div>
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            {testimonials.map((t, i) => (
-              <motion.div key={i} onClick={() => setActive(i)} whileHover={{ x: 4 }} style={{ padding: "24px 28px", border: `1px solid ${i === active ? C_ORANGE : C_BORDER}`, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", background: i === active ? "#fff" : C_CREAM, transition: "all 0.3s" }}>
-                <div>
-                  <div style={{ fontFamily: FONT_BODY, fontWeight: 600, fontSize: "0.82rem", color: C_DARK }}>{t.name}</div>
-                  <div style={{ fontFamily: FONT_BODY, fontSize: "0.75rem", color: C_MID, marginTop: 2 }}>{t.role}</div>
-                </div>
-                <div style={{ textAlign: "right" }}>
-                  <div style={{ fontFamily: FONT_DISPLAY, fontSize: "1.7rem", color: C_ORANGE, lineHeight: 1 }}>{t.metric}</div>
-                  <div style={{ fontFamily: FONT_BODY, fontSize: "0.7rem", color: C_MID, letterSpacing: "0.06em", marginTop: 3 }}>{t.metricLabel}</div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
         </div>
       </div>
     </section>
@@ -728,7 +669,6 @@ export default function App() {
         <Problem />
         <Services />
         <Process />
-        <Results />
         <About />
         <Contact />
       </main>

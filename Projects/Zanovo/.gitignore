@@ -24,6 +24,11 @@ node_modules
 dist
 dist-ssr
 
+# local tooling / exports
+.tools/
+Logos/
+*.zip
+
 # next.js
 .next
 out
