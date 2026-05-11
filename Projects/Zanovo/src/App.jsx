@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from "react";
 import { motion, useInView } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { nationalToE164, PHONE_COUNTRY_OPTIONS, validateNationalPhone } from "./lib/phoneIntl";
 import { WHATSAPP_CHAT_URL } from "./constants/contact";
 
@@ -697,6 +697,7 @@ function ProcessSection() {
 /* ─── Pricing ─── */
 const plans = [
   {
+    slug: "starter",
     name: "Starter Pack",
     setup: "R4,500",
     price: "R2,500",
@@ -713,6 +714,7 @@ const plans = [
     featured: false,
   },
   {
+    slug: "growth",
     name: "Growth Pack",
     setup: "R9,500",
     price: "R5,500",
@@ -730,6 +732,7 @@ const plans = [
     featured: true,
   },
   {
+    slug: "growth-max",
     name: "Growth Max Pack",
     setup: "R18,000",
     price: "R9,500",
@@ -750,6 +753,7 @@ const plans = [
 
 function PricingSection() {
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
   return (
     <section id="pricing" style={{ padding: "100px 24px", maxWidth: 1100, margin: "0 auto" }}>
       <Reveal style={{ marginBottom: 56, textAlign: "center" }}>
@@ -766,7 +770,7 @@ function PricingSection() {
       </Reveal>
 
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: 16, alignItems: "start" }}>
-        {plans.map(({ name, setup, price, tag, description, features, cta, featured }, i) => (
+        {plans.map(({ slug, name, setup, price, tag, description, features, cta, featured }, i) => (
           <Reveal key={name} delay={i * 0.1}>
             <motion.div
               whileHover={{ translateY: -4 }}
@@ -862,11 +866,15 @@ function PricingSection() {
 
                 {/* CTA */}
                 {featured ? (
-                  <BtnPrimary style={{ width: "100%", justifyContent: "center" }}>
+                  <BtnPrimary
+                    onClick={() => navigate(`/checkout?plan=${slug}`)}
+                    style={{ width: "100%", justifyContent: "center" }}
+                  >
                     {cta} {Icon.arrow}
                   </BtnPrimary>
                 ) : (
                   <motion.button
+                    onClick={() => navigate(`/checkout?plan=${slug}`)}
                     whileHover={{ borderColor: "rgba(255,255,255,0.25)" }}
                     style={{
                       width: "100%", padding: "13px", borderRadius: 10,

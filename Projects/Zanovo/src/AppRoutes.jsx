@@ -3,6 +3,7 @@ import { Route, Routes } from "react-router-dom";
 import App from "./App.jsx";
 
 const PrivacyPolicyPage = lazy(() => import("./PrivacyPolicyPage.jsx"));
+const CheckoutPage = lazy(() => import("./CheckoutPage.jsx"));
 
 export default function AppRoutes() {
   return (
@@ -13,6 +14,14 @@ export default function AppRoutes() {
         element={(
           <Suspense fallback={null}>
             <PrivacyPolicyPage />
+          </Suspense>
+        )}
+      />
+      <Route
+        path="/checkout"
+        element={(
+          <Suspense fallback={null}>
+            <CheckoutPage />
           </Suspense>
         )}
       />

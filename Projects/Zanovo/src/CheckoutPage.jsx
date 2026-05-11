@@ -1,0 +1,600 @@
+import { useState, useEffect } from "react";
+import { useSearchParams, Link } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+
+const C = {
+  bg: "#0A0D12",
+  glass: "rgba(255,255,255,0.04)",
+  border: "rgba(255,255,255,0.08)",
+  accent: "#FF6B00",
+  accentLt: "#FF8533",
+  text: "#F9FAFB",
+  muted: "#9CA3AF",
+  green: "#22C55E",
+};
+
+const ease = [0.22, 1, 0.36, 1];
+
+const EFT_DETAILS = {
+  bank: "Discovery Bank",
+  accountHolder: "Thabiso Molekwa",
+  accountNumber: "11449650740",
+  accountType: "Transaction Account",
+  branchCode: "679000",
+};
+
+const PLANS = {
+  starter: {
+    slug: "starter",
+    name: "Starter Pack",
+    tag: "Foundation",
+    setupDisplay: "R4,500",
+    setupCents: 450000,
+    monthlyDisplay: "R2,500",
+    features: [
+      "5-page mobile-optimised website",
+      "Basic AI webchat & lead capture",
+      "Google Business Profile setup",
+      "Automated review requests (Email & WhatsApp)",
+      "Monthly performance report",
+    ],
+  },
+  growth: {
+    slug: "growth",
+    name: "Growth Pack",
+    tag: "Most Popular",
+    setupDisplay: "R9,500",
+    setupCents: 950000,
+    monthlyDisplay: "R5,500",
+    features: [
+      "Everything in Starter",
+      "AI chatbot with lead qualification",
+      "Automated follow-ups (Email & WhatsApp)",
+      "Missed-call text-back",
+      "CRM integration & lead dashboard",
+      "Reputation management",
+    ],
+  },
+  "growth-max": {
+    slug: "growth-max",
+    name: "Growth Max Pack",
+    tag: "Full Partnership",
+    setupDisplay: "R18,000",
+    setupCents: 1800000,
+    monthlyDisplay: "R9,500",
+    features: [
+      "Everything in Growth",
+      "AI SMS nurture sequences",
+      "Custom landing pages & funnels",
+      "Advanced booking & intake automation",
+      "Priority support",
+      "Monthly strategy call",
+    ],
+  },
+};
+
+const EMPTY_FORM = { name: "", email: "" };
+
+/* ─── Helpers ─── */
+function useIsMobile(bp = 768) {
+  const [v, setV] = useState(typeof window !== "undefined" ? window.innerWidth < bp : false);
+  useEffect(() => {
+    const h = () => setV(window.innerWidth < bp);
+    window.addEventListener("resize", h);
+    return () => window.removeEventListener("resize", h);
+  }, [bp]);
+  return v;
+}
+
+function makeRef(name, slug) {
+  const first = name.trim().split(" ")[0].toUpperCase().replace(/[^A-Z0-9]/g, "") || "CLIENT";
+  return `ZAN-${first}-${slug.toUpperCase().replace(/-/g, "")}`;
+}
+
+/* ─── Sub-components ─── */
+function Logo({ size = 24 }) {
+  return (
+    <Link to="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
+      <svg width={size} height={Math.round(size * 0.73)} viewBox="0 0 120 87" fill="none">
+        <defs>
+          <linearGradient id="cklg1" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#FF6B00" /><stop offset="100%" stopColor="#FF9A3C" />
+          </linearGradient>
+          <linearGradient id="cklg2" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#CC4A00" /><stop offset="100%" stopColor="#FF6B00" />
+          </linearGradient>
+        </defs>
+        <polygon points="0,0 28,0 60,87 44,87" fill="url(#cklg1)" />
+        <polygon points="120,0 92,0 60,87 76,87" fill="url(#cklg2)" />
+      </svg>
+      <span style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: size, color: C.text, letterSpacing: "-0.03em" }}>
+        Zanovo
+      </span>
+    </Link>
+  );
+}
+
+const CheckIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="20 6 9 17 4 12" />
+  </svg>
+);
+
+const ArrowLeft = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M19 12H5M12 19l-7-7 7-7" />
+  </svg>
+);
+
+const CopyIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="9" y="9" width="13" height="13" rx="2" />
+    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+  </svg>
+);
+
+function CopyField({ label, value }) {
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    navigator.clipboard.writeText(value).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+      <span style={{ fontSize: 11, fontWeight: 600, color: C.muted, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+        {label}
+      </span>
+      <div style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: "10px 14px", borderRadius: 8,
+        background: "rgba(255,255,255,0.03)", border: `1px solid ${C.border}`,
+      }}>
+        <span style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: "system-ui, sans-serif" }}>
+          {value}
+        </span>
+        <button
+          type="button"
+          onClick={copy}
+          style={{
+            background: "none", border: "none", cursor: "pointer",
+            color: copied ? C.green : C.muted,
+            display: "flex", alignItems: "center", gap: 4,
+            fontSize: 12, fontWeight: 500, padding: "2px 4px",
+            transition: "color 0.2s", whiteSpace: "nowrap",
+          }}
+        >
+          {copied ? "Copied" : <><CopyIcon /> Copy</>}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Success screen ─── */
+function SuccessScreen({ plan, method }) {
+  return (
+    <div style={{ background: C.bg, minHeight: "100svh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 24px", textAlign: "center" }}>
+      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5, ease }} style={{ maxWidth: 520 }}>
+        <div style={{
+          width: 64, height: 64, borderRadius: "50%",
+          background: "rgba(34,197,94,0.12)", border: "1px solid rgba(34,197,94,0.3)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          margin: "0 auto 28px", color: C.green,
+        }}>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        </div>
+        <h1 style={{ fontSize: "clamp(26px, 5vw, 38px)", marginBottom: 16, fontFamily: "system-ui, sans-serif" }}>
+          {method === "eft" ? "Booking received." : "Payment received. You're in."}
+        </h1>
+        <p style={{ color: C.muted, fontSize: 16, lineHeight: 1.8, marginBottom: 32 }}>
+          {method === "eft"
+            ? <>Your EFT details for the <strong style={{ color: C.text }}>{plan.name}</strong> have been submitted. Once we confirm receipt of your payment, we will reach out within one business day to schedule your planning call.</>
+            : <>Your setup fee for the <strong style={{ color: C.text }}>{plan.name}</strong> has been received. We will reach out within one business day to schedule your planning call.</>
+          }
+        </p>
+        <div style={{ padding: "20px 24px", borderRadius: 14, background: "rgba(255,107,0,0.06)", border: "1px solid rgba(255,107,0,0.15)", textAlign: "left", marginBottom: 32 }}>
+          <p style={{ fontSize: 13, fontWeight: 600, color: C.accent, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 12 }}>
+            What happens next
+          </p>
+          {(method === "eft"
+            ? ["Send your proof of payment to thabiso@zanovo.co.za", "We confirm receipt and reach out within one business day", "We schedule your planning call before anything is built"]
+            : ["We review your business and current online presence", "You receive a call to plan every detail of your build", "We deliver your website and systems within 7 days of the call"]
+          ).map((step, i, arr) => (
+            <div key={i} style={{ display: "flex", gap: 12, alignItems: "flex-start", marginBottom: i < arr.length - 1 ? 10 : 0 }}>
+              <span style={{
+                width: 22, height: 22, borderRadius: "50%",
+                background: "rgba(255,107,0,0.12)", border: "1px solid rgba(255,107,0,0.2)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 11, fontWeight: 700, color: C.accent, flexShrink: 0,
+              }}>
+                {i + 1}
+              </span>
+              <span style={{ color: C.text, fontSize: 14, lineHeight: 1.6 }}>{step}</span>
+            </div>
+          ))}
+        </div>
+        <Link to="/" style={{ display: "inline-flex", alignItems: "center", gap: 8, color: C.muted, fontSize: 14, fontWeight: 500, textDecoration: "none" }}>
+          <ArrowLeft /> Back to home
+        </Link>
+      </motion.div>
+    </div>
+  );
+}
+
+/* ─── Main page ─── */
+export default function CheckoutPage() {
+  const [params] = useSearchParams();
+  const planKey = params.get("plan") || "growth";
+  const plan = PLANS[planKey] || PLANS.growth;
+
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [errors, setErrors] = useState({});
+  const [payMethod, setPayMethod] = useState("eft"); // "eft" | "card"
+  const [cardStatus, setCardStatus] = useState("idle"); // idle | loading | error
+  const [eftStatus, setEftStatus] = useState("idle");   // idle | submitted
+  const [successMethod, setSuccessMethod] = useState(null);
+  const [paystackReady, setPaystackReady] = useState(false);
+  const isMobile = useIsMobile();
+
+  const paymentRef = makeRef(form.name, plan.slug);
+
+  /* Load Paystack inline script */
+  useEffect(() => {
+    if (document.getElementById("paystack-js")) { setPaystackReady(true); return; }
+    const script = document.createElement("script");
+    script.id = "paystack-js";
+    script.src = "https://js.paystack.co/v1/inline.js";
+    script.async = true;
+    script.onload = () => setPaystackReady(true);
+    document.body.appendChild(script);
+  }, []);
+
+  const validate = () => {
+    const e = {};
+    if (!form.name.trim()) e.name = "Full name is required.";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = "A valid email address is required.";
+    return e;
+  };
+
+  /* EFT submit — just captures name + email, shows success */
+  const handleEftSubmit = (e) => {
+    e.preventDefault();
+    const errs = validate();
+    if (Object.keys(errs).length) { setErrors(errs); return; }
+    setErrors({});
+    setSuccessMethod("eft");
+  };
+
+  /* Card submit — Paystack popup */
+  const handleCardPay = (e) => {
+    e.preventDefault();
+    const errs = validate();
+    if (Object.keys(errs).length) { setErrors(errs); return; }
+    setErrors({});
+
+    const key = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY;
+    if (!key || !paystackReady || !window.PaystackPop) {
+      setCardStatus("error");
+      return;
+    }
+    setCardStatus("loading");
+    const handler = window.PaystackPop.setup({
+      key,
+      email: form.email.trim().toLowerCase(),
+      amount: plan.setupCents,
+      currency: "ZAR",
+      ref: `zanovo-${plan.slug}-${Date.now()}`,
+      channels: ["card"],
+      metadata: {
+        custom_fields: [
+          { display_name: "Customer Name", variable_name: "customer_name", value: form.name.trim() },
+          { display_name: "Plan", variable_name: "plan", value: plan.name },
+        ],
+      },
+      callback: () => { setSuccessMethod("card"); },
+      onClose: () => { setCardStatus("idle"); },
+    });
+    handler.openIframe();
+  };
+
+  if (successMethod) return <SuccessScreen plan={plan} method={successMethod} />;
+
+  const inputStyle = {
+    padding: "12px 16px", borderRadius: 10,
+    background: "rgba(255,255,255,0.04)", border: `1px solid ${C.border}`,
+    color: C.text, fontSize: 15, outline: "none", width: "100%",
+    fontFamily: "system-ui, sans-serif", transition: "border-color 0.2s",
+    boxSizing: "border-box",
+  };
+
+  const isEft = payMethod === "eft";
+
+  return (
+    <div style={{ background: C.bg, minHeight: "100svh" }}>
+      {/* Top bar */}
+      <div style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: isMobile ? "16px 20px" : "20px 32px",
+        borderBottom: `1px solid ${C.border}`,
+        maxWidth: 1100, margin: "0 auto",
+      }}>
+        <Logo size={20} />
+        <Link to="/" style={{ display: "flex", alignItems: "center", gap: 6, color: C.muted, fontSize: 14, fontWeight: 500, textDecoration: "none" }}>
+          <ArrowLeft /> Back
+        </Link>
+      </div>
+
+      {/* Main content */}
+      <div style={{
+        maxWidth: 1100, margin: "0 auto",
+        padding: isMobile ? "36px 20px 60px" : "64px 32px",
+        display: "grid",
+        gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
+        gap: isMobile ? 48 : 80,
+        alignItems: "start",
+      }}>
+
+        {/* ── Left: Plan summary + reassurance ── */}
+        <div>
+          <div style={{
+            display: "inline-flex", alignItems: "center",
+            padding: "4px 14px", borderRadius: 100,
+            background: "rgba(255,107,0,0.08)", border: "1px solid rgba(255,107,0,0.15)",
+            color: C.accent, fontSize: 12, fontWeight: 600, marginBottom: 20,
+          }}>
+            {plan.tag}
+          </div>
+
+          <h1 style={{ fontSize: "clamp(26px, 4vw, 42px)", marginBottom: 8, fontFamily: "system-ui, sans-serif" }}>
+            {plan.name}
+          </h1>
+          <p style={{ color: C.muted, fontSize: 15, lineHeight: 1.7, marginBottom: 28 }}>
+            Reserve your spot with a once-off setup fee. Your monthly retainer only begins after your website and systems are live.
+          </p>
+
+          {/* Fee cards */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 32 }}>
+            <div style={{ padding: "16px 18px", borderRadius: 12, background: "rgba(255,107,0,0.08)", border: "1px solid rgba(255,107,0,0.2)" }}>
+              <div style={{ fontSize: 11, color: C.muted, fontWeight: 500, marginBottom: 6, letterSpacing: "0.04em" }}>Paying today</div>
+              <div style={{ fontSize: 22, fontWeight: 700, color: C.accent, letterSpacing: "-0.02em", fontFamily: "system-ui, sans-serif" }}>{plan.setupDisplay}</div>
+              <div style={{ fontSize: 11, color: C.muted, marginTop: 3 }}>Once-off setup fee</div>
+            </div>
+            <div style={{ padding: "16px 18px", borderRadius: 12, background: C.glass, border: `1px solid ${C.border}` }}>
+              <div style={{ fontSize: 11, color: C.muted, fontWeight: 500, marginBottom: 6, letterSpacing: "0.04em" }}>After go-live</div>
+              <div style={{ fontSize: 22, fontWeight: 700, color: C.text, letterSpacing: "-0.02em", fontFamily: "system-ui, sans-serif" }}>{plan.monthlyDisplay}</div>
+              <div style={{ fontSize: 11, color: C.muted, marginTop: 3 }}>Monthly retainer</div>
+            </div>
+          </div>
+
+          {/* Reassurance */}
+          <div style={{ padding: "22px 20px", borderRadius: 14, marginBottom: 28, background: "rgba(255,107,0,0.06)", border: "1px solid rgba(255,107,0,0.18)" }}>
+            <p style={{ fontSize: 12, fontWeight: 700, color: C.accent, textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 10 }}>
+              Important — read before paying
+            </p>
+            <p style={{ fontSize: 15, color: C.text, lineHeight: 1.8, marginBottom: 12 }}>
+              <strong>You will receive a call before we build anything.</strong> Once payment is confirmed, we will contact you within one business day to schedule a dedicated planning session — before a single page is designed or a single system is configured.
+            </p>
+            <p style={{ fontSize: 14, color: C.muted, lineHeight: 1.7, margin: 0 }}>
+              Nothing happens without your input and approval. You are in full control of the direction.
+            </p>
+          </div>
+
+          {/* Included features */}
+          <p style={{ fontSize: 12, fontWeight: 600, color: C.muted, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 14 }}>
+            What's included
+          </p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {plan.features.map((f) => (
+              <div key={f} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                <span style={{ color: C.green, flexShrink: 0, marginTop: 1 }}><CheckIcon /></span>
+                <span style={{ fontSize: 14, color: C.muted, lineHeight: 1.5 }}>{f}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Right: Payment panel ── */}
+        <div style={{
+          padding: isMobile ? "28px 20px" : "32px 28px", borderRadius: 20,
+          background: C.glass, border: `1px solid ${C.border}`,
+          backdropFilter: "blur(16px)",
+          position: isMobile ? "static" : "sticky", top: 32,
+        }}>
+          <p style={{ fontSize: 12, fontWeight: 600, color: C.accent, textTransform: "uppercase", letterSpacing: "0.14em", marginBottom: 8 }}>
+            Secure checkout
+          </p>
+          <h2 style={{ fontSize: 22, marginBottom: 20, fontFamily: "system-ui, sans-serif" }}>
+            Complete your booking
+          </h2>
+
+          {/* Payment method toggle */}
+          <div style={{
+            display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 24,
+            padding: 4, borderRadius: 12,
+            background: "rgba(255,255,255,0.03)", border: `1px solid ${C.border}`,
+          }}>
+            {[
+              { key: "eft", label: "Pay via EFT" },
+              { key: "card", label: "Pay by Card" },
+            ].map(({ key, label }) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => { setPayMethod(key); setErrors({}); }}
+                style={{
+                  padding: "10px", borderRadius: 8, border: "none", cursor: "pointer",
+                  fontFamily: "system-ui, sans-serif", fontSize: 13, fontWeight: 600,
+                  transition: "background 0.2s, color 0.2s",
+                  background: payMethod === key
+                    ? key === "eft" ? `linear-gradient(135deg, ${C.accent}, ${C.accentLt})` : "rgba(255,255,255,0.08)"
+                    : "transparent",
+                  color: payMethod === key ? (key === "eft" ? "#fff" : C.text) : C.muted,
+                  boxShadow: payMethod === key && key === "eft" ? "0 0 16px rgba(255,107,0,0.3)" : "none",
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {/* Shared name + email fields */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 14, marginBottom: 20 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <label style={{ fontSize: 13, fontWeight: 600, color: C.muted, fontFamily: "system-ui, sans-serif" }}>Full name</label>
+              <input
+                type="text"
+                placeholder="Your name"
+                value={form.name}
+                onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
+                maxLength={120}
+                style={{ ...inputStyle, borderColor: errors.name ? "rgba(255,80,40,0.5)" : C.border }}
+                onFocus={(e) => { e.target.style.borderColor = "rgba(255,107,0,0.5)"; }}
+                onBlur={(e) => { e.target.style.borderColor = errors.name ? "rgba(255,80,40,0.5)" : C.border; }}
+              />
+              {errors.name && <span style={{ fontSize: 12, color: "#FF9A8A" }}>{errors.name}</span>}
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <label style={{ fontSize: 13, fontWeight: 600, color: C.muted, fontFamily: "system-ui, sans-serif" }}>Email address</label>
+              <input
+                type="email"
+                placeholder="you@example.com"
+                value={form.email}
+                onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
+                maxLength={254}
+                style={{ ...inputStyle, borderColor: errors.email ? "rgba(255,80,40,0.5)" : C.border }}
+                onFocus={(e) => { e.target.style.borderColor = "rgba(255,107,0,0.5)"; }}
+                onBlur={(e) => { e.target.style.borderColor = errors.email ? "rgba(255,80,40,0.5)" : C.border; }}
+              />
+              {errors.email && <span style={{ fontSize: 12, color: "#FF9A8A" }}>{errors.email}</span>}
+              <span style={{ fontSize: 12, color: C.muted }}>Your booking confirmation will be sent here.</span>
+            </div>
+          </div>
+
+          <AnimatePresence mode="wait">
+            {isEft ? (
+              /* ── EFT panel ── */
+              <motion.form
+                key="eft"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.25, ease }}
+                onSubmit={handleEftSubmit}
+                style={{ display: "flex", flexDirection: "column", gap: 12 }}
+              >
+                {/* Banking details */}
+                <div style={{ padding: "18px 16px", borderRadius: 12, background: "rgba(255,255,255,0.03)", border: `1px solid ${C.border}`, display: "flex", flexDirection: "column", gap: 12 }}>
+                  <p style={{ fontSize: 12, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.1em", margin: 0 }}>
+                    Banking details
+                  </p>
+                  <CopyField label="Bank" value={EFT_DETAILS.bank} />
+                  <CopyField label="Account holder" value={EFT_DETAILS.accountHolder} />
+                  <CopyField label="Account number" value={EFT_DETAILS.accountNumber} />
+                  <CopyField label="Account type" value={EFT_DETAILS.accountType} />
+                  <CopyField label="Branch code" value={EFT_DETAILS.branchCode} />
+                  <CopyField label="Amount" value={plan.setupDisplay} />
+                  <CopyField
+                    label="Payment reference (use exactly)"
+                    value={paymentRef}
+                  />
+                </div>
+
+                <div style={{ padding: "14px 16px", borderRadius: 10, background: "rgba(255,107,0,0.06)", border: "1px solid rgba(255,107,0,0.15)" }}>
+                  <p style={{ fontSize: 13, color: C.text, lineHeight: 1.65, margin: 0 }}>
+                    After making the transfer, email your proof of payment to{" "}
+                    <strong style={{ color: C.accent }}>thabiso@zanovo.co.za</strong>
+                    {" "}with your name and plan in the subject line. We confirm within one business day.
+                  </p>
+                </div>
+
+                <motion.button
+                  type="submit"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  style={{
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                    padding: "15px 24px", borderRadius: 10, marginTop: 4,
+                    background: `linear-gradient(135deg, ${C.accent}, ${C.accentLt})`,
+                    color: "#fff", fontWeight: 700, fontSize: 15,
+                    fontFamily: "system-ui, sans-serif",
+                    boxShadow: "0 0 32px rgba(255,107,0,0.35)",
+                    cursor: "pointer", border: "none",
+                  }}
+                >
+                  I've made the EFT transfer
+                </motion.button>
+
+                <p style={{ fontSize: 12, color: C.muted, textAlign: "center", lineHeight: 1.6, margin: 0 }}>
+                  Only click this once you have completed the bank transfer.
+                </p>
+              </motion.form>
+            ) : (
+              /* ── Card panel ── */
+              <motion.form
+                key="card"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.25, ease }}
+                onSubmit={handleCardPay}
+                style={{ display: "flex", flexDirection: "column", gap: 14 }}
+              >
+                {/* Card logos */}
+                <div style={{
+                  padding: "14px 16px", borderRadius: 10,
+                  background: "rgba(255,255,255,0.03)", border: `1px solid ${C.border}`,
+                  display: "flex", alignItems: "center", gap: 12,
+                }}>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <div style={{ width: 38, height: 24, borderRadius: 4, background: "#1A1F71", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <span style={{ color: "#fff", fontSize: 9, fontWeight: 800, letterSpacing: "0.03em" }}>VISA</span>
+                    </div>
+                    <div style={{ width: 38, height: 24, borderRadius: 4, background: "#252525", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <div style={{ width: 14, height: 14, borderRadius: "50%", background: "#EB001B" }} />
+                      <div style={{ width: 14, height: 14, borderRadius: "50%", background: "#F79E1B", marginLeft: -6 }} />
+                    </div>
+                  </div>
+                  <span style={{ fontSize: 12, color: C.muted, lineHeight: 1.5 }}>
+                    Visa and Mastercard. Card details entered securely via Paystack — we never see your card number.
+                  </span>
+                </div>
+
+                {cardStatus === "error" && (
+                  <div style={{ padding: "12px 14px", borderRadius: 10, background: "rgba(255,80,40,0.12)", border: "1px solid rgba(255,80,40,0.3)", color: "#FF9A8A", fontSize: 14, lineHeight: 1.6 }}>
+                    Card payments are not yet active. Please use EFT or email us at thabiso@zanovo.co.za.
+                  </div>
+                )}
+
+                <motion.button
+                  type="submit"
+                  disabled={cardStatus === "loading"}
+                  whileHover={cardStatus !== "loading" ? { scale: 1.02 } : {}}
+                  whileTap={cardStatus !== "loading" ? { scale: 0.98 } : {}}
+                  style={{
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                    padding: "15px 24px", borderRadius: 10,
+                    background: cardStatus === "loading" ? "rgba(255,107,0,0.5)" : `linear-gradient(135deg, ${C.accent}, ${C.accentLt})`,
+                    color: "#fff", fontWeight: 700, fontSize: 15,
+                    fontFamily: "system-ui, sans-serif",
+                    boxShadow: cardStatus === "loading" ? "none" : "0 0 32px rgba(255,107,0,0.35)",
+                    cursor: cardStatus === "loading" ? "not-allowed" : "pointer", border: "none",
+                  }}
+                >
+                  {cardStatus === "loading" ? "Opening payment..." : <>Pay {plan.setupDisplay} securely</>}
+                </motion.button>
+
+                <p style={{ fontSize: 12, color: C.muted, textAlign: "center", lineHeight: 1.6, margin: 0 }}>
+                  256-bit SSL encryption · Powered by Paystack · No lock-in contracts
+                </p>
+              </motion.form>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
+    </div>
+  );
+}
