@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { motion, useInView } from "framer-motion";
 import { Link } from "react-router-dom";
 import { nationalToE164, PHONE_COUNTRY_OPTIONS, validateNationalPhone } from "./lib/phoneIntl";
@@ -112,6 +112,19 @@ function Reveal({ children, delay = 0, className = "", style = {} }) {
       {children}
     </motion.div>
   );
+}
+
+/* ─── Responsive hook ─── */
+function useIsMobile(breakpoint = 768) {
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== "undefined" ? window.innerWidth < breakpoint : false
+  );
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < breakpoint);
+    window.addEventListener("resize", handler);
+    return () => window.removeEventListener("resize", handler);
+  }, [breakpoint]);
+  return isMobile;
 }
 
 /* ─── SVG Icons ─── */
@@ -228,64 +241,125 @@ function BtnGhost({ children, onClick }) {
 }
 
 /* ─── Navbar ─── */
+const NAV_LINKS = [
+  { id: "services", label: "Services" },
+  { id: "process",  label: "Process" },
+  { id: "pricing",  label: "Pricing" },
+  { id: "contact",  label: "Contact" },
+];
+
 function Navbar() {
-  const scrollTo = (id) => document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+  const [open, setOpen] = useState(false);
+  const isMobile = useIsMobile(700);
+  const scrollTo = (id) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+    setOpen(false);
+  };
 
   return (
-    /* Outer wrapper handles the fixed positioning — no transform conflict */
     <motion.div
       initial={{ opacity: 0, y: -16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease }}
       style={{
         position: "fixed", top: 16, left: 0, right: 0,
-        zIndex: 100, padding: "0 24px",
+        zIndex: 100, padding: "0 16px",
         display: "flex", justifyContent: "center",
         pointerEvents: "none",
       }}
     >
       <nav style={{
         width: "100%", maxWidth: 1100,
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        flexWrap: "wrap", gap: 8,
-        padding: "10px 20px",
-        background: "rgba(10,13,18,0.85)",
+        background: "rgba(10,13,18,0.92)",
         backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)",
         border: `1px solid ${C.border}`,
         borderRadius: 14, pointerEvents: "all",
-        boxSizing: "border-box",
+        boxSizing: "border-box", overflow: "hidden",
       }}>
-        <Logo size={20} />
-
-        {/* Nav links — always visible, wrap on very small screens */}
+        {/* Top bar */}
         <div style={{
-          display: "flex", gap: 2, alignItems: "center",
-          flexWrap: "wrap", justifyContent: "flex-end",
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "10px 20px",
         }}>
-          {[
-            { id: "services", label: "Services" },
-            { id: "process",  label: "Process" },
-            { id: "pricing",  label: "Pricing" },
-            { id: "contact",  label: "Contact" },
-          ].map(({ id, label }) => (
-            <motion.button
-              key={id}
-              onClick={() => scrollTo(id)}
-              whileHover={{ color: C.text }}
+          <Logo size={20} />
+
+          {isMobile ? (
+            /* Hamburger button */
+            <button
+              onClick={() => setOpen((v) => !v)}
+              aria-label="Toggle menu"
               style={{
-                background: "none", border: "none", color: C.muted,
-                fontSize: 14, fontWeight: 500, cursor: "pointer",
-                padding: "6px 10px", borderRadius: 8,
-                transition: "color 0.2s", whiteSpace: "nowrap",
+                background: "none", border: `1px solid ${C.border}`,
+                borderRadius: 8, padding: "7px 10px",
+                color: C.text, cursor: "pointer",
+                display: "flex", alignItems: "center",
               }}
             >
-              {label}
-            </motion.button>
-          ))}
-          <BtnPrimary onClick={() => scrollTo("contact")} style={{ padding: "8px 18px", fontSize: 13, marginLeft: 4 }}>
-            Get Started
-          </BtnPrimary>
+              {open ? (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                  <path d="M3 7h18M3 12h18M3 17h18" />
+                </svg>
+              )}
+            </button>
+          ) : (
+            /* Desktop nav links */
+            <div style={{ display: "flex", gap: 2, alignItems: "center" }}>
+              {NAV_LINKS.map(({ id, label }) => (
+                <motion.button
+                  key={id}
+                  onClick={() => scrollTo(id)}
+                  whileHover={{ color: C.text }}
+                  style={{
+                    background: "none", border: "none", color: C.muted,
+                    fontSize: 14, fontWeight: 500, cursor: "pointer",
+                    padding: "6px 10px", borderRadius: 8,
+                    transition: "color 0.2s", whiteSpace: "nowrap",
+                  }}
+                >
+                  {label}
+                </motion.button>
+              ))}
+              <BtnPrimary onClick={() => scrollTo("contact")} style={{ padding: "8px 18px", fontSize: 13, marginLeft: 4 }}>
+                Get Started
+              </BtnPrimary>
+            </div>
+          )}
         </div>
+
+        {/* Mobile dropdown */}
+        {isMobile && open && (
+          <div style={{
+            borderTop: `1px solid ${C.border}`,
+            padding: "12px 20px 16px",
+            display: "flex", flexDirection: "column", gap: 0,
+          }}>
+            {NAV_LINKS.map(({ id, label }) => (
+              <button
+                key={id}
+                onClick={() => scrollTo(id)}
+                style={{
+                  background: "none", border: "none", color: C.text,
+                  fontSize: 15, fontWeight: 500, cursor: "pointer",
+                  padding: "12px 0", textAlign: "left",
+                  borderBottom: `1px solid ${C.border}`,
+                  fontFamily: "system-ui, sans-serif",
+                }}
+              >
+                {label}
+              </button>
+            ))}
+            <BtnPrimary
+              onClick={() => scrollTo("contact")}
+              style={{ marginTop: 14, justifyContent: "center", width: "100%" }}
+            >
+              Get Started
+            </BtnPrimary>
+          </div>
+        )}
       </nav>
     </motion.div>
   );
@@ -485,6 +559,7 @@ const services = [
 ];
 
 function ServicesSection() {
+  const isMobile = useIsMobile();
   return (
     <section id="services" style={{ padding: "100px 24px", maxWidth: 1100, margin: "0 auto" }}>
       <Reveal style={{ marginBottom: 56 }}>
@@ -503,11 +578,11 @@ function ServicesSection() {
 
       <div style={{
         display: "grid",
-        gridTemplateColumns: "repeat(3, 1fr)",
+        gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)",
         gap: 16,
       }}>
         {services.map(({ icon, title, body, tag, span }, i) => (
-          <Reveal key={title} delay={i * 0.08} style={{ gridColumn: `span ${span}` }}>
+          <Reveal key={title} delay={i * 0.08} style={{ gridColumn: isMobile ? "span 1" : `span ${span}` }}>
             <motion.div
               whileHover={{ borderColor: "rgba(255,107,0,0.3)", translateY: -4 }}
               transition={{ duration: 0.2 }}
@@ -674,6 +749,7 @@ const plans = [
 ];
 
 function PricingSection() {
+  const isMobile = useIsMobile();
   return (
     <section id="pricing" style={{ padding: "100px 24px", maxWidth: 1100, margin: "0 auto" }}>
       <Reveal style={{ marginBottom: 56, textAlign: "center" }}>
@@ -689,7 +765,7 @@ function PricingSection() {
         </p>
       </Reveal>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, alignItems: "start" }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: 16, alignItems: "start" }}>
         {plans.map(({ name, setup, price, tag, description, features, cta, featured }, i) => (
           <Reveal key={name} delay={i * 0.1}>
             <motion.div
@@ -824,6 +900,7 @@ function ContactSection() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [status, setStatus] = useState("idle");
   const [errorMsg, setErrorMsg] = useState("");
+  const isMobile = useIsMobile();
 
   const includes = [
     "A full audit of your website and Google presence",
@@ -909,7 +986,7 @@ function ContactSection() {
         borderRadius: 24, overflow: "hidden",
         background: `linear-gradient(135deg, rgba(255,107,0,0.08) 0%, rgba(255,107,0,0.03) 100%)`,
         border: "1px solid rgba(255,107,0,0.15)",
-        padding: "64px 48px",
+        padding: isMobile ? "40px 24px" : "64px 48px",
         position: "relative",
       }}>
         <div style={{
@@ -919,7 +996,7 @@ function ContactSection() {
           pointerEvents: "none",
         }} />
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 64, alignItems: "start" }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: isMobile ? 40 : 64, alignItems: "start" }}>
           <Reveal>
             <p style={{ fontSize: 12, fontWeight: 600, color: C.accent, textTransform: "uppercase", letterSpacing: "0.18em", marginBottom: 20 }}>
               Let's talk
