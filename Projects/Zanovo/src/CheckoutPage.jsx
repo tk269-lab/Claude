@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { PHONE_COUNTRY_OPTIONS, validateNationalPhone, nationalToE164 } from "./lib/phoneIntl";
 
 const C = {
   bg: "#0A0D12",
@@ -73,7 +74,7 @@ const PLANS = {
   },
 };
 
-const EMPTY_FORM = { name: "", email: "" };
+const EMPTY_FORM = { name: "", business: "", email: "", phone: "", phoneCountry: "ZA" };
 
 /* ─── Helpers ─── */
 function useIsMobile(bp = 768) {
@@ -86,9 +87,9 @@ function useIsMobile(bp = 768) {
   return v;
 }
 
-function makeRef(name, slug) {
-  const first = name.trim().split(" ")[0].toUpperCase().replace(/[^A-Z0-9]/g, "") || "CLIENT";
-  return `ZAN-${first}-${slug.toUpperCase().replace(/-/g, "")}`;
+function makeRef(business, clientName, planName) {
+  const clean = (s) => s.trim().replace(/[^A-Za-z0-9 ]/g, "").trim() || "–";
+  return `${clean(business)}-${clean(clientName)}-${clean(planName)}`;
 }
 
 /* ─── Sub-components ─── */
@@ -240,7 +241,7 @@ export default function CheckoutPage() {
   const [paystackReady, setPaystackReady] = useState(false);
   const isMobile = useIsMobile();
 
-  const paymentRef = makeRef(form.name, plan.slug);
+  const paymentRef = makeRef(form.business, form.name, plan.name);
 
   /* Load Paystack inline script */
   useEffect(() => {
@@ -256,7 +257,10 @@ export default function CheckoutPage() {
   const validate = () => {
     const e = {};
     if (!form.name.trim()) e.name = "Full name is required.";
+    if (!form.business.trim()) e.business = "Business name is required.";
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = "A valid email address is required.";
+    const phoneErr = validateNationalPhone(form.phone.trim(), form.phoneCountry);
+    if (phoneErr) e.phone = phoneErr;
     return e;
   };
 
@@ -292,6 +296,8 @@ export default function CheckoutPage() {
       metadata: {
         custom_fields: [
           { display_name: "Customer Name", variable_name: "customer_name", value: form.name.trim() },
+          { display_name: "Business Name", variable_name: "business_name", value: form.business.trim() },
+          { display_name: "Phone", variable_name: "phone", value: nationalToE164(form.phone.trim(), form.phoneCountry) ?? form.phone.trim() },
           { display_name: "Plan", variable_name: "plan", value: plan.name },
         ],
       },
@@ -441,8 +447,10 @@ export default function CheckoutPage() {
             ))}
           </div>
 
-          {/* Shared name + email fields */}
+          {/* Shared fields: name, business, email, phone */}
           <div style={{ display: "flex", flexDirection: "column", gap: 14, marginBottom: 20 }}>
+
+            {/* Full name */}
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
               <label style={{ fontSize: 13, fontWeight: 600, color: C.muted, fontFamily: "system-ui, sans-serif" }}>Full name</label>
               <input
@@ -457,6 +465,24 @@ export default function CheckoutPage() {
               />
               {errors.name && <span style={{ fontSize: 12, color: "#FF9A8A" }}>{errors.name}</span>}
             </div>
+
+            {/* Business name */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <label style={{ fontSize: 13, fontWeight: 600, color: C.muted, fontFamily: "system-ui, sans-serif" }}>Business name</label>
+              <input
+                type="text"
+                placeholder="Your business"
+                value={form.business}
+                onChange={(e) => setForm((p) => ({ ...p, business: e.target.value }))}
+                maxLength={160}
+                style={{ ...inputStyle, borderColor: errors.business ? "rgba(255,80,40,0.5)" : C.border }}
+                onFocus={(e) => { e.target.style.borderColor = "rgba(255,107,0,0.5)"; }}
+                onBlur={(e) => { e.target.style.borderColor = errors.business ? "rgba(255,80,40,0.5)" : C.border; }}
+              />
+              {errors.business && <span style={{ fontSize: 12, color: "#FF9A8A" }}>{errors.business}</span>}
+            </div>
+
+            {/* Email */}
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
               <label style={{ fontSize: 13, fontWeight: 600, color: C.muted, fontFamily: "system-ui, sans-serif" }}>Email address</label>
               <input
@@ -472,6 +498,44 @@ export default function CheckoutPage() {
               {errors.email && <span style={{ fontSize: 12, color: "#FF9A8A" }}>{errors.email}</span>}
               <span style={{ fontSize: 12, color: C.muted }}>Your booking confirmation will be sent here.</span>
             </div>
+
+            {/* Phone number */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <label style={{ fontSize: 13, fontWeight: 600, color: C.muted, fontFamily: "system-ui, sans-serif" }}>Phone number</label>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "stretch" }}>
+                <select
+                  value={form.phoneCountry}
+                  aria-label="Country calling code"
+                  onChange={(e) => setForm((p) => ({ ...p, phoneCountry: e.target.value }))}
+                  style={{
+                    ...inputStyle,
+                    flex: "0 1 220px", minWidth: 160, maxWidth: "100%",
+                    cursor: "pointer", appearance: "auto",
+                  }}
+                  onFocus={(e) => { e.target.style.borderColor = "rgba(255,107,0,0.5)"; }}
+                  onBlur={(e) => { e.target.style.borderColor = C.border; }}
+                >
+                  {PHONE_COUNTRY_OPTIONS.map(({ iso, dial, label: cn }) => (
+                    <option key={iso} value={iso}>+{dial} {cn}</option>
+                  ))}
+                </select>
+                <input
+                  type="tel"
+                  placeholder="National number"
+                  value={form.phone}
+                  onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value.replace(/[^\d\s()+-]/g, "") }))}
+                  maxLength={28}
+                  style={{
+                    ...inputStyle, flex: "1 1 160px", minWidth: 130,
+                    borderColor: errors.phone ? "rgba(255,80,40,0.5)" : C.border,
+                  }}
+                  onFocus={(e) => { e.target.style.borderColor = "rgba(255,107,0,0.5)"; }}
+                  onBlur={(e) => { e.target.style.borderColor = errors.phone ? "rgba(255,80,40,0.5)" : C.border; }}
+                />
+              </div>
+              {errors.phone && <span style={{ fontSize: 12, color: "#FF9A8A" }}>{errors.phone}</span>}
+            </div>
+
           </div>
 
           <AnimatePresence mode="wait">
