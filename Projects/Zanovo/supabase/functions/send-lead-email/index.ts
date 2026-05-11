@@ -106,7 +106,27 @@ const escapeHtml = (value: string) =>
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
 
-const emailBodyText = (lead: Lead) =>
+// ── Shared SMTP transporter ──────────────────────────────────────────────────
+
+const createSmtpTransporter = () => {
+  const smtpUser = Deno.env.get("SMTP_USER");
+  const smtpPass = Deno.env.get("SMTP_PASS");
+  if (!smtpUser || !smtpPass) return null;
+
+  const host = Deno.env.get("SMTP_HOST") || "smtp.gmail.com";
+  const port = Number(Deno.env.get("SMTP_PORT") || 465);
+
+  return nodemailer.createTransport({
+    host,
+    port,
+    secure: port === 465,
+    auth: { user: smtpUser, pass: smtpPass },
+  });
+};
+
+// ── Email 1: Lead alert to Thabiso ───────────────────────────────────────────
+
+const alertEmailText = (lead: Lead) =>
   [
     "New Zanovo lead",
     "",
@@ -119,7 +139,7 @@ const emailBodyText = (lead: Lead) =>
     lead.message || "No message provided.",
   ].join("\n");
 
-const emailBodyHtml = (lead: Lead) => `
+const alertEmailHtml = (lead: Lead) => `
   <div style="font-family: Arial, sans-serif; color: #111827; line-height: 1.5;">
     <h2 style="margin: 0 0 16px;">New Zanovo lead</h2>
     <table cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
@@ -133,30 +153,18 @@ const emailBodyHtml = (lead: Lead) => `
   </div>
 `;
 
-const sendZohoSmtpEmail = async (lead: Lead) => {
-  const smtpUser = Deno.env.get("ZOHO_SMTP_USER");
-  const smtpPass = Deno.env.get("ZOHO_SMTP_PASS");
+const sendNotificationEmail = async (lead: Lead) => {
+  const transporter = createSmtpTransporter();
   const to = Deno.env.get("LEAD_EMAIL_TO");
 
-  if (!smtpUser || !smtpPass || !to) {
-    console.warn("Zoho SMTP is not configured; lead stored without email notification.");
+  if (!transporter || !to) {
+    console.warn("SMTP is not configured; skipping lead alert email.");
     return;
   }
 
-  const host = Deno.env.get("ZOHO_SMTP_HOST") || "smtp.zoho.com";
-  const port = Number(Deno.env.get("ZOHO_SMTP_PORT") || 465);
+  const smtpUser = Deno.env.get("SMTP_USER")!;
   const fromAddress = Deno.env.get("LEAD_EMAIL_FROM") || smtpUser;
   const fromName = stripHeaderChars(Deno.env.get("LEAD_EMAIL_FROM_NAME") || "Zanovo Website");
-
-  const transporter = nodemailer.createTransport({
-    host,
-    port,
-    secure: port === 465,
-    auth: {
-      user: smtpUser,
-      pass: smtpPass,
-    },
-  });
 
   try {
     await transporter.sendMail({
@@ -164,17 +172,123 @@ const sendZohoSmtpEmail = async (lead: Lead) => {
       to,
       replyTo: lead.email,
       subject: `New Zanovo lead: ${lead.business}`,
-      text: emailBodyText(lead),
-      html: emailBodyHtml(lead),
+      text: alertEmailText(lead),
+      html: alertEmailHtml(lead),
     });
   } finally {
     transporter.close();
   }
 };
 
-const sendNotificationEmail = async (lead: Lead) => {
-  await sendZohoSmtpEmail(lead);
+// ── Email 2: Confirmation to the lead ────────────────────────────────────────
+
+const confirmationEmailText = (lead: Lead, meetLink: string) => {
+  const bookingLine = meetLink
+    ? `\nIf you'd like to get ahead of it, you can book a time directly here:\n${meetLink}\n`
+    : "";
+
+  return [
+    `Hi ${lead.name},`,
+    "",
+    "Thanks for reaching out — your request for a strategy call has come through.",
+    "",
+    "I'll be in touch within one business day, either by phone or email, to lock in a time for us to talk.",
+    bookingLine,
+    "Talk soon,",
+    "",
+    "Thabiso Molekwa",
+    "Founder, Zanovo",
+    "thabiso@zanovo.co.za",
+  ].join("\n");
 };
+
+const confirmationEmailHtml = (lead: Lead, meetLink: string) => {
+  const bookingSection = meetLink
+    ? `<p style="margin: 20px 0 0;">If you'd like to get ahead of it, you can <a href="${escapeHtml(meetLink)}" style="color: #FF6B00; font-weight: 600;">book a time directly here</a>.</p>`
+    : "";
+
+  return `
+  <div style="font-family: Arial, sans-serif; color: #111827; line-height: 1.6; max-width: 560px;">
+    <p style="margin: 0 0 16px;">Hi ${escapeHtml(lead.name)},</p>
+    <p style="margin: 0 0 16px;">Thanks for reaching out — your request for a strategy call has come through.</p>
+    <p style="margin: 0 0 16px;">I'll be in touch within one business day, either by phone or email, to lock in a time for us to talk.</p>
+    ${bookingSection}
+    <p style="margin: 32px 0 4px;">Talk soon,</p>
+    <p style="margin: 0;">
+      <strong>Thabiso Molekwa</strong><br>
+      Founder, Zanovo<br>
+      <a href="mailto:thabiso@zanovo.co.za" style="color: #FF6B00;">thabiso@zanovo.co.za</a>
+    </p>
+  </div>
+`;
+};
+
+const sendLeadConfirmationEmail = async (lead: Lead) => {
+  const transporter = createSmtpTransporter();
+  if (!transporter) {
+    console.warn("SMTP is not configured; skipping lead confirmation email.");
+    return;
+  }
+
+  const smtpUser = Deno.env.get("SMTP_USER")!;
+  const fromAddress = Deno.env.get("LEAD_EMAIL_FROM") || smtpUser;
+  const fromName = stripHeaderChars(Deno.env.get("LEAD_EMAIL_FROM_NAME") || "Thabiso | Zanovo");
+  const meetLink = Deno.env.get("GOOGLE_MEET_LINK") || "";
+
+  try {
+    await transporter.sendMail({
+      from: `"${fromName}" <${fromAddress}>`,
+      to: lead.email,
+      subject: "Your strategy call request has been received — Zanovo",
+      text: confirmationEmailText(lead, meetLink),
+      html: confirmationEmailHtml(lead, meetLink),
+    });
+  } finally {
+    transporter.close();
+  }
+};
+
+// ── WhatsApp alert to Thabiso with one-tap reply link ────────────────────────
+
+const sendCallMeBotNewLead = async (lead: Lead) => {
+  const phone = Deno.env.get("CALLMEBOT_PHONE");
+  const apiKey = Deno.env.get("CALLMEBOT_APIKEY");
+
+  if (!phone || !apiKey) {
+    console.warn("CallMeBot is not configured; skipping WhatsApp alert.");
+    return;
+  }
+
+  const meetLink = Deno.env.get("GOOGLE_MEET_LINK") || "";
+
+  // Build a clean international number for wa.me (digits only, no leading +)
+  const cleanPhone = lead.phone.replace(/\D/g, "").replace(/^0/, "27");
+
+  const waMessage = meetLink
+    ? `Hi ${lead.name}! Thanks for reaching out to Zanovo. I'd love to book your strategy call — here's my booking link: ${meetLink}`
+    : `Hi ${lead.name}! Thanks for reaching out to Zanovo. I'll be in touch within one business day to book your strategy call.`;
+
+  const waLink = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(waMessage)}`;
+
+  const text = [
+    "📋 New strategy call request",
+    "",
+    `Name: ${lead.name}`,
+    `Business: ${lead.business}`,
+    `Email: ${lead.email}`,
+    `Phone: ${lead.phone}`,
+    "",
+    `Tap to WhatsApp them:\n${waLink}`,
+  ].join("\n");
+
+  const params = new URLSearchParams({ phone, text, apikey: apiKey });
+  const res = await fetch(`https://api.callmebot.com/whatsapp.php?${params}`);
+  if (!res.ok) {
+    console.warn(`CallMeBot responded with status ${res.status}`);
+  }
+};
+
+// ── Handler ──────────────────────────────────────────────────────────────────
 
 Deno.serve(async (req) => {
   const origin = req.headers.get("origin");
@@ -247,14 +361,32 @@ Deno.serve(async (req) => {
     return json({ error: "Could not save submission." }, 500, origin);
   }
 
-  try {
-    await sendNotificationEmail(lead);
-  } catch (err) {
-    console.error("Lead notification failed:", err instanceof Error ? err.message : err);
+  // Run all three notifications in parallel.
+  // Alert email to Thabiso is primary — failure returns 502.
+  // Confirmation email to lead and WhatsApp alert are non-fatal.
+  const [alertResult, confirmResult, whatsappResult] = await Promise.allSettled([
+    sendNotificationEmail(lead),
+    sendLeadConfirmationEmail(lead),
+    sendCallMeBotNewLead(lead),
+  ]);
+
+  if (alertResult.status === "rejected") {
+    const err = alertResult.reason;
+    console.error("Lead alert email failed:", err instanceof Error ? err.message : err);
     return json({
       error: "Submission saved, but notification failed.",
       detail: publicErrorMessage(err),
     }, 502, origin);
+  }
+
+  if (confirmResult.status === "rejected") {
+    const err = confirmResult.reason;
+    console.error("Lead confirmation email failed:", err instanceof Error ? err.message : err);
+  }
+
+  if (whatsappResult.status === "rejected") {
+    const err = whatsappResult.reason;
+    console.error("WhatsApp alert failed:", err instanceof Error ? err.message : err);
   }
 
   return json({ ok: true }, 200, origin);
