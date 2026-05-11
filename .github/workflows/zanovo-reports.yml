@@ -1,0 +1,54 @@
+name: Zanovo Daily & Weekly Reports
+
+on:
+  schedule:
+    # Daily report — Mon to Fri at 5pm SAST (15:00 UTC)
+    - cron: "0 15 * * 1-5"
+    # Weekly report — Sunday at 8pm SAST (18:00 UTC)
+    - cron: "0 18 * * 0"
+  # Allow manual trigger from GitHub Actions tab
+  workflow_dispatch:
+    inputs:
+      type:
+        description: "Report type"
+        required: true
+        default: "daily"
+        type: choice
+        options:
+          - daily
+          - weekly
+
+jobs:
+  send-report:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Determine report type
+        id: report-type
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "type=${{ github.event.inputs.type }}" >> $GITHUB_OUTPUT
+          elif [ "$(date +%u)" = "7" ]; then
+            echo "type=weekly" >> $GITHUB_OUTPUT
+          else
+            echo "type=daily" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Trigger Zanovo report
+        run: |
+          response=$(curl -s -w "\n%{http_code}" -X POST \
+            "https://rvaxrzewjikepmmlwxra.supabase.co/functions/v1/generate-report" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d "{\"type\": \"${{ steps.report-type.outputs.type }}\"}")
+
+          body=$(echo "$response" | head -n -1)
+          status=$(echo "$response" | tail -n 1)
+
+          echo "Status: $status"
+          echo "Response: $body"
+
+          if [ "$status" != "200" ]; then
+            echo "Report generation failed with status $status"
+            exit 1
+          fi
