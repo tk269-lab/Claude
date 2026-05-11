@@ -2,8 +2,8 @@ name: Zanovo Daily & Weekly Reports
 
 on:
   schedule:
-    # Daily report — Mon to Fri at 5pm SAST (15:00 UTC)
-    - cron: "0 15 * * 1-5"
+    # Daily report — Mon to Fri at 6pm SAST (16:00 UTC)
+    - cron: "0 16 * * 1-5"
     # Weekly report — Sunday at 8pm SAST (18:00 UTC)
     - cron: "0 18 * * 0"
   # Allow manual trigger from GitHub Actions tab
