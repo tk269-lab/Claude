@@ -544,14 +544,14 @@ const services = [
   {
     icon: Icon.globe,
     title: "Website Design & Build",
-    body: "A premium, conversion-optimised website that represents your business exactly as it deserves — professional, trustworthy, and built to turn visitors into paying clients. Delivered in 7 days, not months.",
+    body: "A premium, conversion-optimised website that represents your business exactly as it deserves — professional, trustworthy, and built to turn Cape Town visitors into paying clients. Delivered in 7 days, not months.",
     tag: "Foundation",
     span: 2,
   },
   {
     icon: Icon.chart,
     title: "Google & Local SEO",
-    body: "When a potential client searches for what you offer, your business appears first. We manage your Google Business Profile, local keyword strategy, and deliver clear monthly ranking reports.",
+    body: "When a Cape Town client searches for what you offer, your business appears first. We manage your Google Business Profile, local keyword strategy, and deliver clear monthly ranking reports.",
     tag: "Visibility",
     span: 1,
   },
@@ -654,7 +654,7 @@ const steps = [
   {
     num: "03",
     title: "We Grow Together",
-    body: "This is where the relationship begins in earnest. Monthly performance reviews, ongoing optimisation, and a team that's genuinely invested in your outcomes — not just at launch, but for the long term.",
+    body: "This is where the real relationship begins. Monthly performance reviews, ongoing optimisation, and a team genuinely invested in your outcomes — not just at launch, but for the long term.",
   },
 ];
 
@@ -1264,7 +1264,7 @@ function Footer() {
         </p>
       </div>
       <p style={{ color: C.muted, fontSize: 13, margin: 0 }}>
-        Cape Town, South Africa
+        Founded by TK Molekwa · Cape Town, South Africa
       </p>
     </footer>
   );
