@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
 
 const C = {
@@ -56,6 +57,11 @@ const list = {
 };
 
 export default function PrivacyPolicyPage() {
+  useEffect(() => {
+    document.title = "Privacy Policy | Zanovo";
+    return () => { document.title = "Web Design Cape Town | Zanovo | AI-Powered Systems"; };
+  }, []);
+
   return (
     <div style={{ background: C.bg, minHeight: "100svh", color: C.text }}>
       <header

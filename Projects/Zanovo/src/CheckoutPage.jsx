@@ -228,6 +228,11 @@ function SuccessScreen({ plan, method }) {
 
 /* ─── Main page ─── */
 export default function CheckoutPage() {
+  useEffect(() => {
+    document.title = "Pricing & Checkout | Zanovo";
+    return () => { document.title = "Web Design Cape Town | Zanovo | AI-Powered Systems"; };
+  }, []);
+
   const [params] = useSearchParams();
   const planKey = params.get("plan") || "growth";
   const plan = PLANS[planKey] || PLANS.growth;
