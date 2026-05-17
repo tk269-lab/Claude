@@ -323,19 +323,6 @@ function Navbar() {
                   {label}
                 </motion.button>
               ))}
-              <a
-                href="tel:+27630279893"
-                style={{
-                  color: C.muted, fontSize: 13, fontWeight: 500,
-                  textDecoration: "none", padding: "6px 10px",
-                  borderRadius: 8, whiteSpace: "nowrap",
-                  transition: "color 0.2s",
-                }}
-                onMouseEnter={e => e.currentTarget.style.color = C.text}
-                onMouseLeave={e => e.currentTarget.style.color = C.muted}
-              >
-                +27 63 027 9893
-              </a>
               <BtnPrimary onClick={() => scrollTo("contact")} style={{ padding: "8px 18px", fontSize: 13, marginLeft: 4 }}>
                 Get Started
               </BtnPrimary>
@@ -1264,7 +1251,7 @@ function Footer() {
         </p>
       </div>
       <p style={{ color: C.muted, fontSize: 13, margin: 0 }}>
-        Founded by TK Molekwa · Cape Town, South Africa
+        Founded by Thabiso Molekwa · Cape Town, South Africa
       </p>
     </footer>
   );
