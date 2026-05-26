@@ -1251,7 +1251,7 @@ function Footer() {
         </p>
       </div>
       <p style={{ color: C.muted, fontSize: 13, margin: 0 }}>
-        Founded by Thabiso Molekwa · South Africa
+        Founded by Thabiso Molekwa · Cape Town, South Africa
       </p>
     </footer>
   );
