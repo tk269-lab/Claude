@@ -601,6 +601,14 @@ export default function CheckoutPage() {
                 <p style={{ fontSize: 12, color: C.muted, textAlign: "center", lineHeight: 1.6, margin: 0 }}>
                   Only click this once you have completed the bank transfer.
                 </p>
+
+                <p style={{ fontSize: 12, color: C.muted, textAlign: "center", lineHeight: 1.6, margin: 0 }}>
+                  By proceeding you agree to our{" "}
+                  <Link to="/refund" target="_blank" rel="noopener noreferrer" style={{ color: C.accent, textDecoration: "none", fontWeight: 600 }}>
+                    Refund &amp; Cancellation Policy
+                  </Link>
+                  .
+                </p>
               </motion.form>
             ) : (
               /* ── Card panel ── */
@@ -659,6 +667,14 @@ export default function CheckoutPage() {
 
                 <p style={{ fontSize: 12, color: C.muted, textAlign: "center", lineHeight: 1.6, margin: 0 }}>
                   256-bit SSL encryption · Powered by Paystack · No lock-in contracts
+                </p>
+
+                <p style={{ fontSize: 12, color: C.muted, textAlign: "center", lineHeight: 1.6, margin: 0 }}>
+                  By proceeding you agree to our{" "}
+                  <Link to="/refund" target="_blank" rel="noopener noreferrer" style={{ color: C.accent, textDecoration: "none", fontWeight: 600 }}>
+                    Refund &amp; Cancellation Policy
+                  </Link>
+                  .
                 </p>
               </motion.form>
             )}
