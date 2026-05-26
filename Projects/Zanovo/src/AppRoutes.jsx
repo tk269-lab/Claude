@@ -5,6 +5,7 @@ import App from "./App.jsx";
 const PrivacyPolicyPage = lazy(() => import("./PrivacyPolicyPage.jsx"));
 const CheckoutPage = lazy(() => import("./CheckoutPage.jsx"));
 const RefundPolicyPage = lazy(() => import("./RefundPolicyPage.jsx"));
+const AuthPage = lazy(() => import("./AuthPage.jsx"));
 
 export default function AppRoutes() {
   return (
@@ -31,6 +32,14 @@ export default function AppRoutes() {
         element={(
           <Suspense fallback={null}>
             <RefundPolicyPage />
+          </Suspense>
+        )}
+      />
+      <Route
+        path="/login"
+        element={(
+          <Suspense fallback={null}>
+            <AuthPage />
           </Suspense>
         )}
       />

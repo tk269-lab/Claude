@@ -395,7 +395,7 @@ function Hero() {
         textTransform: "uppercase",
       }}>
         <span style={{ width: 6, height: 6, borderRadius: "50%", background: C.green, display: "inline-block" }} />
-        South Africa's digital growth partner
+        Your digital growth partner
       </motion.div>
 
       {/* Headline */}
@@ -404,7 +404,7 @@ function Hero() {
         maxWidth: 860, lineHeight: 1.05, letterSpacing: "-0.03em",
         marginBottom: 24,
       }}>
-        Your Cape Town business deserves an online presence that{" "}
+        Your business deserves an online presence that{" "}
         <span style={{
           background: `linear-gradient(135deg, ${C.accent}, ${C.accentLt})`,
           WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
@@ -419,7 +419,7 @@ function Hero() {
         fontSize: "clamp(16px, 2vw, 20px)", color: C.muted,
         maxWidth: 600, lineHeight: 1.75, marginBottom: 40,
       }}>
-        We design, build, and manage digital systems for small businesses across Cape Town —
+        We design, build, and manage digital systems for small businesses —
         helping them attract better clients, operate more efficiently, and grow with confidence,
         backed by AI-powered web design, automation, and a team invested in your outcomes.
       </motion.p>
@@ -531,14 +531,14 @@ const services = [
   {
     icon: Icon.globe,
     title: "Website Design & Build",
-    body: "A premium, conversion-optimised website that represents your business exactly as it deserves — professional, trustworthy, and built to turn Cape Town visitors into paying clients. Delivered in 7 days, not months.",
+    body: "A premium, conversion-optimised website that represents your business exactly as it deserves — professional, trustworthy, and built to turn visitors into paying clients. Delivered in 7 days, not months.",
     tag: "Foundation",
     span: 2,
   },
   {
     icon: Icon.chart,
     title: "Google & Local SEO",
-    body: "When a Cape Town client searches for what you offer, your business appears first. We manage your Google Business Profile, local keyword strategy, and deliver clear monthly ranking reports.",
+    body: "When a client searches for what you offer, your business appears first. We manage your Google Business Profile, local keyword strategy, and deliver clear monthly ranking reports.",
     tag: "Visibility",
     span: 1,
   },
@@ -568,7 +568,7 @@ function ServicesSection() {
         </p>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 24 }}>
           <h2 style={{ fontSize: "clamp(28px, 4vw, 48px)", maxWidth: 500, margin: 0 }}>
-            Web design &amp; AI systems for Cape Town small businesses.
+            Web design &amp; AI systems for small businesses.
           </h2>
           <p style={{ color: C.muted, maxWidth: 320, fontSize: 15, lineHeight: 1.75, margin: 0 }}>
             Every service we offer is scoped around a single objective: sustainable client acquisition and long-term business growth.
@@ -868,14 +868,14 @@ function PricingSection() {
                 {/* CTA */}
                 {featured ? (
                   <BtnPrimary
-                    onClick={() => navigate(`/checkout?plan=${slug}`)}
+                    onClick={() => navigate(`/login?plan=${slug}`)}
                     style={{ width: "100%", justifyContent: "center" }}
                   >
                     {cta} {Icon.arrow}
                   </BtnPrimary>
                 ) : (
                   <motion.button
-                    onClick={() => navigate(`/checkout?plan=${slug}`)}
+                    onClick={() => navigate(`/login?plan=${slug}`)}
                     whileHover={{ borderColor: "rgba(255,255,255,0.25)" }}
                     style={{
                       width: "100%", padding: "13px", borderRadius: 10,
