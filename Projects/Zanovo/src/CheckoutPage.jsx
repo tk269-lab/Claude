@@ -49,6 +49,7 @@ const PLANS = {
     monthlyDisplay: "R5,500",
     features: [
       "Everything in Starter",
+      "AI webchat",
       "AI chatbot with lead qualification",
       "Automated follow-ups (Email & WhatsApp)",
       "Missed-call text-back",

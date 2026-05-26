@@ -722,6 +722,7 @@ const plans = [
     description: "A complete client acquisition system — web presence, lead capture, and automated follow-up — working together to generate consistent, measurable growth.",
     features: [
       "Everything in Starter",
+      "AI webchat",
       "AI chatbot with lead qualification",
       "Automated follow-ups (Email & WhatsApp)",
       "Missed-call text-back",
