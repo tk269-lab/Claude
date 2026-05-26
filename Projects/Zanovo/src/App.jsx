@@ -395,7 +395,7 @@ function Hero() {
         textTransform: "uppercase",
       }}>
         <span style={{ width: 6, height: 6, borderRadius: "50%", background: C.green, display: "inline-block" }} />
-        Cape Town&apos;s Digital Growth Partner
+        South Africa's digital growth partner
       </motion.div>
 
       {/* Headline */}
@@ -1251,7 +1251,7 @@ function Footer() {
         </p>
       </div>
       <p style={{ color: C.muted, fontSize: 13, margin: 0 }}>
-        Founded by Thabiso Molekwa · Cape Town, South Africa
+        Founded by Thabiso Molekwa · South Africa
       </p>
     </footer>
   );

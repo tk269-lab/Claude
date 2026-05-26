@@ -119,7 +119,7 @@ export default function PrivacyPolicyPage() {
 
         <h2 style={sectionTitle}>1. Who we are</h2>
         <p style={body}>
-          <strong style={{ color: C.text }}>Zanovo</strong> (referred to as “we”, “us”, or “our”) provides digital growth services for businesses. We are based in South Africa (Cape Town). For the purposes of POPIA, we act as the <strong style={{ color: C.text }}>responsible party</strong> in relation to personal information described in this policy. Where the GDPR or UK GDPR applies, we act as the <strong style={{ color: C.text }}>controller</strong> for the same processing.
+          <strong style={{ color: C.text }}>Zanovo</strong> (referred to as “we”, “us”, or “our”) provides digital growth services for businesses. We are based in South Africa. For the purposes of POPIA, we act as the <strong style={{ color: C.text }}>responsible party</strong> in relation to personal information described in this policy. Where the GDPR or UK GDPR applies, we act as the <strong style={{ color: C.text }}>controller</strong> for the same processing.
         </p>
         <p style={body}>
           <strong style={{ color: C.text }}>Privacy and POPIA contact:</strong>{" "}
@@ -220,7 +220,7 @@ export default function PrivacyPolicyPage() {
           Questions about this policy or our privacy practices:{" "}
           <a href="mailto:thabiso@zanovo.co.za" style={{ color: C.accent }}>thabiso@zanovo.co.za</a>
           <br />
-          Zanovo — Cape Town, South Africa
+          Zanovo — South Africa
         </p>
       </article>
     </div>
