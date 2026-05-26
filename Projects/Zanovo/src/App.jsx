@@ -705,7 +705,7 @@ const plans = [
     description: "The essential digital foundation — a professional web presence and structured lead capture — for businesses ready to grow with intention.",
     features: [
       "5-page mobile-optimised website",
-      "Basic AI webchat & lead capture",
+      "Lead capture & enquiry management",
       "Google Business Profile setup",
       "Automated review requests (Email & WhatsApp)",
       "Monthly performance report",

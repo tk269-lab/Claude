@@ -34,7 +34,7 @@ const PLANS = {
     monthlyDisplay: "R2,500",
     features: [
       "5-page mobile-optimised website",
-      "Basic AI webchat & lead capture",
+      "Lead capture & enquiry management",
       "Google Business Profile setup",
       "Automated review requests (Email & WhatsApp)",
       "Monthly performance report",
