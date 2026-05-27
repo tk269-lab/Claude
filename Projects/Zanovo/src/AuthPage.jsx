@@ -32,21 +32,8 @@ const SA_PROVINCES = [
 
 function Logo({ size = 24 }) {
   return (
-    <Link to="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
-      <svg width={size} height={Math.round(size * 0.73)} viewBox="0 0 120 87" fill="none" aria-hidden>
-        <defs>
-          <linearGradient id="auth-lg1" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#FF6B00" />
-            <stop offset="100%" stopColor="#FF9A3C" />
-          </linearGradient>
-          <linearGradient id="auth-lg2" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#CC4A00" />
-            <stop offset="100%" stopColor="#FF6B00" />
-          </linearGradient>
-        </defs>
-        <polygon points="0,0 28,0 60,87 44,87" fill="url(#auth-lg1)" />
-        <polygon points="120,0 92,0 60,87 76,87" fill="url(#auth-lg2)" />
-      </svg>
+    <Link to="/" style={{ display: "flex", alignItems: "center", gap: 4, textDecoration: "none" }}>
+      <img src="/zanovo-submark-transparent.png" alt="Zanovo" height={size * 1.5} style={{ display: "block", marginRight: -6 }} />
       <span style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: size, color: C.text, letterSpacing: "-0.03em" }}>
         Zanovo
       </span>
