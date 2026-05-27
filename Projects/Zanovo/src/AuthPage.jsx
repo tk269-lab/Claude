@@ -104,19 +104,139 @@ function PrimaryBtn({ children, loading, disabled, type = "submit", onClick }) {
   );
 }
 
+/* ─── OAuth buttons ─── */
+function OAuthButtons({ redirectTo }) {
+  const [loadingProvider, setLoadingProvider] = useState(null);
+  const [oauthError, setOauthError] = useState("");
+
+  const signInWith = async (provider) => {
+    setOauthError("");
+    setLoadingProvider(provider);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: { redirectTo },
+    });
+    if (error) {
+      setOauthError(error.message || `Could not sign in with ${provider}.`);
+      setLoadingProvider(null);
+    }
+    // On success the browser navigates away — no cleanup needed
+  };
+
+  const btnBase = {
+    display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+    padding: "12px 20px", borderRadius: 10, cursor: "pointer",
+    fontFamily: "system-ui, sans-serif", fontSize: 14, fontWeight: 600,
+    transition: "background 0.2s, border-color 0.2s",
+    width: "100%", border: `1px solid ${C.border}`,
+    background: "rgba(255,255,255,0.04)", color: C.text,
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      {/* Google */}
+      <motion.button
+        type="button"
+        whileHover={{ background: "rgba(255,255,255,0.08)" }}
+        whileTap={{ scale: 0.98 }}
+        disabled={!!loadingProvider}
+        onClick={() => signInWith("google")}
+        style={{ ...btnBase, opacity: loadingProvider && loadingProvider !== "google" ? 0.5 : 1 }}
+      >
+        {loadingProvider === "google" ? (
+          <span style={{ color: C.muted, fontSize: 13 }}>Redirecting…</span>
+        ) : (
+          <>
+            <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden>
+              <path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.5 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.6-.4-3.9z"/>
+              <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.5 15.8 18.9 12 24 12c3.1 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.5 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/>
+              <path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.3 35.5 26.8 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.3 44 24 44z"/>
+              <path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.3-2.4 4.2-4.4 5.5l6.2 5.2C41.7 35.8 44 30.3 44 24c0-1.3-.1-2.6-.4-3.9z"/>
+            </svg>
+            Continue with Google
+          </>
+        )}
+      </motion.button>
+
+
+{oauthError && (
+        <p style={{ fontSize: 12, color: C.red, textAlign: "center", margin: 0 }}>{oauthError}</p>
+      )}
+    </div>
+  );
+}
+
+function Divider() {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "4px 0" }}>
+      <div style={{ flex: 1, height: 1, background: C.border }} />
+      <span style={{ fontSize: 12, color: C.muted, fontFamily: "system-ui, sans-serif", fontWeight: 500 }}>or</span>
+      <div style={{ flex: 1, height: 1, background: C.border }} />
+    </div>
+  );
+}
+
 /* ─── Step 1: Auth (sign up / sign in) ─── */
-function AuthStep({ defaultMode = "signup", onSuccess }) {
+/* Password rules — only enforced on sign-up */
+const PASSWORD_RULES = [
+  { key: "length",  label: "At least 8 characters",          test: (p) => p.length >= 8 },
+  { key: "upper",   label: "At least 1 capital letter",       test: (p) => /[A-Z]/.test(p) },
+  { key: "number",  label: "At least 1 number",               test: (p) => /[0-9]/.test(p) },
+  { key: "special", label: "At least one of: ! @ # $ % *",    test: (p) => /[!@#$%*]/.test(p) },
+];
+
+function PasswordChecklist({ password }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 5, marginTop: 2 }}>
+      {PASSWORD_RULES.map(({ key, label, test }) => {
+        const passed = test(password);
+        return (
+          <div key={key} style={{ display: "flex", alignItems: "center", gap: 7 }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+              stroke={passed ? C.green : "rgba(255,255,255,0.2)"}
+              strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              {passed
+                ? <polyline points="20 6 9 17 4 12" />
+                : <circle cx="12" cy="12" r="10" />}
+            </svg>
+            <span style={{ fontSize: 12, color: passed ? C.green : C.muted, transition: "color 0.2s" }}>
+              {label}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function AuthStep({ defaultMode = "signup", onSuccess, redirectTo }) {
   const [mode, setMode] = useState(defaultMode); // "signup" | "signin"
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [globalError, setGlobalError] = useState("");
+  const [passwordFocused, setPasswordFocused] = useState(false);
+
+  const validatePassword = (p) => {
+    if (!PASSWORD_RULES.every(({ test }) => test(p))) {
+      return "Password does not meet the requirements below.";
+    }
+    return "";
+  };
 
   const validate = () => {
     const e = {};
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) e.email = "Enter a valid email address.";
-    if (password.length < 8) e.password = "Password must be at least 8 characters.";
+    if (mode === "signup") {
+      const pwErr = validatePassword(password);
+      if (pwErr) e.password = pwErr;
+      if (!confirmPassword) e.confirmPassword = "Please confirm your password.";
+      else if (confirmPassword !== password) e.confirmPassword = "Passwords do not match.";
+    } else {
+      if (!password) e.password = "Password is required.";
+    }
     return e;
   };
 
@@ -196,18 +316,23 @@ function AuthStep({ defaultMode = "signup", onSuccess }) {
 
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease }}>
+      {/* OAuth providers */}
+      <OAuthButtons redirectTo={redirectTo} />
+      <Divider />
+
       {/* Mode toggle */}
       <div style={{
         display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4,
         padding: 4, borderRadius: 10,
         background: "rgba(255,255,255,0.03)", border: `1px solid ${C.border}`,
-        marginBottom: 28,
+        marginBottom: 20,
+        marginTop: 4,
       }}>
         {[{ key: "signup", label: "Create account" }, { key: "signin", label: "Sign in" }].map(({ key, label }) => (
           <button
             key={key}
             type="button"
-            onClick={() => { setMode(key); setErrors({}); setGlobalError(""); }}
+            onClick={() => { setMode(key); setErrors({}); setGlobalError(""); setConfirmPassword(""); }}
             style={{
               padding: "9px", borderRadius: 7, border: "none", cursor: "pointer",
               fontFamily: "system-ui, sans-serif", fontSize: 13, fontWeight: 600,
@@ -239,16 +364,72 @@ function AuthStep({ defaultMode = "signup", onSuccess }) {
         <Field label="Password" error={errors.password}>
           <input
             type="password"
-            placeholder={mode === "signup" ? "Create a password (8+ characters)" : "Your password"}
+            placeholder={mode === "signup" ? "Create a strong password" : "Your password"}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             maxLength={128}
             autoComplete={mode === "signup" ? "new-password" : "current-password"}
             style={inputStyle(!!errors.password)}
-            onFocus={(e) => { e.target.style.borderColor = "rgba(255,107,0,0.5)"; }}
-            onBlur={(e) => { e.target.style.borderColor = errors.password ? "rgba(255,80,40,0.5)" : C.border; }}
+            onFocus={(e) => { e.target.style.borderColor = "rgba(255,107,0,0.5)"; setPasswordFocused(true); }}
+            onBlur={(e) => { e.target.style.borderColor = errors.password ? "rgba(255,80,40,0.5)" : C.border; setPasswordFocused(false); }}
           />
+          {/* Live requirements checklist — only on sign-up, shown when focused or password has content */}
+          {mode === "signup" && (passwordFocused || password.length > 0) && (
+            <PasswordChecklist password={password} />
+          )}
         </Field>
+
+        {/* Confirm password — sign-up only */}
+        {mode === "signup" && (
+          <Field label="Confirm password" error={errors.confirmPassword}>
+            <input
+              type="password"
+              placeholder="Re-enter your password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              maxLength={128}
+              autoComplete="new-password"
+              style={{
+                ...inputStyle(!!errors.confirmPassword),
+                // Live green border once they match and password is valid
+                borderColor: confirmPassword && confirmPassword === password && !errors.confirmPassword
+                  ? "rgba(34,197,94,0.5)"
+                  : errors.confirmPassword
+                    ? "rgba(255,80,40,0.5)"
+                    : C.border,
+              }}
+              onFocus={(e) => { e.target.style.borderColor = "rgba(255,107,0,0.5)"; }}
+              onBlur={(e) => {
+                e.target.style.borderColor =
+                  confirmPassword && confirmPassword === password
+                    ? "rgba(34,197,94,0.5)"
+                    : errors.confirmPassword
+                      ? "rgba(255,80,40,0.5)"
+                      : C.border;
+              }}
+            />
+            {/* Match indicator */}
+            {confirmPassword.length > 0 && !errors.confirmPassword && (
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
+                {confirmPassword === password ? (
+                  <>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={C.green} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                    <span style={{ fontSize: 12, color: C.green }}>Passwords match</span>
+                  </>
+                ) : (
+                  <>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={C.red} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                    <span style={{ fontSize: 12, color: C.red }}>Passwords do not match</span>
+                  </>
+                )}
+              </div>
+            )}
+          </Field>
+        )}
 
         {globalError && (
           <div style={{ padding: "12px 14px", borderRadius: 10, background: "rgba(255,80,40,0.1)", border: "1px solid rgba(255,80,40,0.25)", color: C.red, fontSize: 14, lineHeight: 1.6 }}>
@@ -282,12 +463,19 @@ function AuthStep({ defaultMode = "signup", onSuccess }) {
 
 /* ─── Step 2: Profile form ─── */
 function ProfileStep({ user, onSaved }) {
+  // Pre-fill from Google (or other OAuth) metadata if available
+  const googleName = user?.user_metadata?.full_name
+    || user?.user_metadata?.name
+    || "";
+
   const [form, setForm] = useState({
-    full_name: "",
+    full_name: googleName,
     business_name: "",
     phone: "",
     phone_country: "ZA",
     billing_address: "",
+    billing_address_line2: "",
+    billing_suburb: "",
     billing_city: "",
     billing_province: "Western Cape",
     billing_postal_code: "",
@@ -325,6 +513,8 @@ function ProfileStep({ user, onSaved }) {
         business_name: form.business_name.trim(),
         phone: form.phone.trim(),
         billing_address: form.billing_address.trim(),
+        billing_address_line2: form.billing_address_line2.trim() || null,
+        billing_suburb: form.billing_suburb.trim(),
         billing_city: form.billing_city.trim(),
         billing_postal_code: form.billing_postal_code.trim(),
         updated_at: new Date().toISOString(),
@@ -409,6 +599,16 @@ function ProfileStep({ user, onSaved }) {
               maxLength={200} style={iStyle("billing_address")} onFocus={onFocus} onBlur={onBlur("billing_address")} />
           </Field>
 
+          <Field label="Address line 2 (optional)">
+            <input type="text" placeholder="Unit, floor, complex name…" value={form.billing_address_line2} onChange={set("billing_address_line2")}
+              maxLength={200} style={inputStyle()} onFocus={onFocus} onBlur={(e) => { e.target.style.borderColor = C.border; }} />
+          </Field>
+
+          <Field label="Suburb" error={errors.billing_suburb}>
+            <input type="text" placeholder="Suburb" value={form.billing_suburb} onChange={set("billing_suburb")}
+              maxLength={100} style={iStyle("billing_suburb")} onFocus={onFocus} onBlur={onBlur("billing_suburb")} />
+          </Field>
+
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             <Field label="City" error={errors.billing_city}>
               <input type="text" placeholder="City" value={form.billing_city} onChange={set("billing_city")}
@@ -451,6 +651,11 @@ export default function AuthPage() {
   const next = params.get("next") || "/";
   const planParam = params.get("plan");
 
+  // Build OAuth redirect URL — preserves plan param so flow continues after Google/Apple
+  const oauthRedirectTo = planParam
+    ? `${window.location.origin}/login?plan=${planParam}`
+    : `${window.location.origin}/login`;
+
   // step: "loading" | "auth" | "profile" | "done"
   const [step, setStep] = useState("loading");
   const [authedUser, setAuthedUser] = useState(null);
@@ -460,7 +665,7 @@ export default function AuthPage() {
     return () => { document.title = "Web Design & AI Systems South Africa | Zanovo"; };
   }, []);
 
-  // On mount: check if already logged in
+  // On mount: check existing session OR pick up OAuth redirect
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) { setStep("auth"); return; }
@@ -469,8 +674,15 @@ export default function AuthPage() {
       setStep(hasProfile ? "done" : "profile");
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session) setStep("auth");
+    // Catches OAuth sign-ins (Google/Apple redirect back to this page)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === "SIGNED_IN" && session) {
+        setAuthedUser(session.user);
+        const hasProfile = await checkProfile(session.user.id);
+        setStep(hasProfile ? "done" : "profile");
+      } else if (!session) {
+        setStep("auth");
+      }
     });
     return () => subscription.unsubscribe();
   }, []);
@@ -556,7 +768,7 @@ export default function AuthPage() {
                     }
                   </p>
                 </div>
-                <AuthStep defaultMode={planParam ? "signup" : "signin"} onSuccess={handleAuthSuccess} />
+                <AuthStep defaultMode={planParam ? "signup" : "signin"} onSuccess={handleAuthSuccess} redirectTo={oauthRedirectTo} />
               </div>
             </motion.div>
           )}

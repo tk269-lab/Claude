@@ -242,7 +242,7 @@ export default function CheckoutPage() {
 
   const [form, setForm] = useState(EMPTY_FORM);
   const [errors, setErrors] = useState({});
-  const [payMethod, setPayMethod] = useState("eft"); // "eft" | "card"
+  const [payMethod, setPayMethod] = useState("card"); // "eft" | "card"
   const [cardStatus, setCardStatus] = useState("idle"); // idle | loading | error
   const [eftStatus, setEftStatus] = useState("idle");   // idle | submitted
   const [successMethod, setSuccessMethod] = useState(null);
@@ -480,10 +480,10 @@ export default function CheckoutPage() {
                   fontFamily: "system-ui, sans-serif", fontSize: 13, fontWeight: 600,
                   transition: "background 0.2s, color 0.2s",
                   background: payMethod === key
-                    ? key === "eft" ? `linear-gradient(135deg, ${C.accent}, ${C.accentLt})` : "rgba(255,255,255,0.08)"
+                    ? `linear-gradient(135deg, ${C.accent}, ${C.accentLt})`
                     : "transparent",
-                  color: payMethod === key ? (key === "eft" ? "#fff" : C.text) : C.muted,
-                  boxShadow: payMethod === key && key === "eft" ? "0 0 16px rgba(255,107,0,0.3)" : "none",
+                  color: payMethod === key ? "#fff" : C.muted,
+                  boxShadow: payMethod === key ? "0 0 16px rgba(255,107,0,0.3)" : "none",
                 }}
               >
                 {label}
