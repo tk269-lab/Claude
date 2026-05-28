@@ -448,24 +448,40 @@ function AuthStep({ defaultMode = "signup", onSuccess, redirectTo }) {
   );
 }
 
-/* ─── Step 2: Profile form ─── */
-function ProfileStep({ user, onSaved }) {
+/* ─── Step 2: Profile form (also used to edit an existing profile) ─── */
+function ProfileStep({ user, onSaved, initialProfile = null, editMode = false }) {
   // Pre-fill from Google (or other OAuth) metadata if available
   const googleName = user?.user_metadata?.full_name
     || user?.user_metadata?.name
     || "";
 
-  const [form, setForm] = useState({
-    full_name: googleName,
-    business_name: "",
-    phone: "",
-    phone_country: "ZA",
-    billing_address: "",
-    billing_address_line2: "",
-    billing_suburb: "",
-    billing_city: "",
-    billing_province: "Western Cape",
-    billing_postal_code: "",
+  const [form, setForm] = useState(() => {
+    if (initialProfile) {
+      return {
+        full_name: initialProfile.full_name || googleName,
+        business_name: initialProfile.business_name || "",
+        phone: initialProfile.phone || "",
+        phone_country: initialProfile.phone_country || "ZA",
+        billing_address: initialProfile.billing_address || "",
+        billing_address_line2: initialProfile.billing_address_line2 || "",
+        billing_suburb: initialProfile.billing_suburb || "",
+        billing_city: initialProfile.billing_city || "",
+        billing_province: initialProfile.billing_province || "Western Cape",
+        billing_postal_code: initialProfile.billing_postal_code || "",
+      };
+    }
+    return {
+      full_name: googleName,
+      business_name: "",
+      phone: "",
+      phone_country: "ZA",
+      billing_address: "",
+      billing_address_line2: "",
+      billing_suburb: "",
+      billing_city: "",
+      billing_province: "Western Cape",
+      billing_postal_code: "",
+    };
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -525,13 +541,15 @@ function ProfileStep({ user, onSaved }) {
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease }}>
       <div style={{ marginBottom: 24 }}>
         <p style={{ fontSize: 12, fontWeight: 700, color: C.accent, textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 8 }}>
-          Step 2 of 2
+          {editMode ? "Your account" : "Step 2 of 2"}
         </p>
         <h2 style={{ fontFamily: "system-ui, sans-serif", fontSize: "clamp(20px, 3vw, 26px)", marginBottom: 8 }}>
-          Complete your profile
+          {editMode ? "Edit your profile" : "Complete your profile"}
         </h2>
         <p style={{ color: C.muted, fontSize: 14, lineHeight: 1.7, margin: 0 }}>
-          This is attached to your account and pre-fills every checkout. You only do this once.
+          {editMode
+            ? "Update your details below. Changes apply to your next checkout."
+            : "This is attached to your account and pre-fills every checkout. You only do this once."}
         </p>
       </div>
 
@@ -624,7 +642,7 @@ function ProfileStep({ user, onSaved }) {
         )}
 
         <PrimaryBtn loading={loading}>
-          {loading ? "Saving…" : "Save and continue →"}
+          {loading ? "Saving…" : editMode ? "Save changes" : "Save and continue →"}
         </PrimaryBtn>
       </form>
     </motion.div>
@@ -637,36 +655,53 @@ export default function AuthPage() {
   const navigate = useNavigate();
   const next = params.get("next") || "/";
   const planParam = params.get("plan");
+  const addonsParam = params.get("addons");
+  const editMode = params.get("edit") === "1"; // navbar "Edit profile"
 
-  // Build OAuth redirect URL — preserves plan param so flow continues after Google/Apple
+  // Query string that preserves plan + add-ons through the flow
+  const planQuery = planParam
+    ? `?plan=${planParam}${addonsParam ? `&addons=${addonsParam}` : ""}`
+    : "";
+
+  // Build OAuth redirect URL — preserves plan + add-ons so flow continues after Google
   const oauthRedirectTo = planParam
-    ? `${window.location.origin}/login?plan=${planParam}`
-    : `${window.location.origin}/login`;
+    ? `${window.location.origin}/login${planQuery}`
+    : `${window.location.origin}/login${editMode ? "?edit=1" : ""}`;
 
   // step: "loading" | "auth" | "profile" | "done"
   const [step, setStep] = useState("loading");
   const [authedUser, setAuthedUser] = useState(null);
+  const [profileData, setProfileData] = useState(null); // existing profile for edit mode
 
   useEffect(() => {
-    document.title = "Sign in | Zanovo";
+    document.title = editMode ? "Edit profile | Zanovo" : "Sign in | Zanovo";
     return () => { document.title = "Web Design & AI Systems South Africa | Zanovo"; };
-  }, []);
+  }, [editMode]);
+
+  // Route a signed-in user to the right step (edit always opens the profile form)
+  const routeSignedIn = async (user) => {
+    setAuthedUser(user);
+    if (editMode) {
+      const profile = await loadFullProfile(user.id);
+      setProfileData(profile);
+      setStep("profile");
+      return;
+    }
+    const hasProfile = await checkProfile(user.id);
+    setStep(hasProfile ? "done" : "profile");
+  };
 
   // On mount: check existing session OR pick up OAuth redirect
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) { setStep("auth"); return; }
-      setAuthedUser(session.user);
-      const hasProfile = await checkProfile(session.user.id);
-      setStep(hasProfile ? "done" : "profile");
+      await routeSignedIn(session.user);
     });
 
-    // Catches OAuth sign-ins (Google/Apple redirect back to this page)
+    // Catches OAuth sign-ins (Google redirect back to this page)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === "SIGNED_IN" && session) {
-        setAuthedUser(session.user);
-        const hasProfile = await checkProfile(session.user.id);
-        setStep(hasProfile ? "done" : "profile");
+        await routeSignedIn(session.user);
       } else if (!session) {
         setStep("auth");
       }
@@ -677,10 +712,11 @@ export default function AuthPage() {
   // Redirect once done
   useEffect(() => {
     if (step === "done") {
-      const dest = planParam ? `/checkout?plan=${planParam}` : next;
+      if (editMode) { navigate("/", { replace: true }); return; }
+      const dest = planParam ? `/checkout${planQuery}` : next;
       navigate(dest, { replace: true });
     }
-  }, [step, navigate, next, planParam]);
+  }, [step, navigate, next, planParam, planQuery, editMode]);
 
   async function checkProfile(userId) {
     const { data } = await supabase
@@ -691,8 +727,23 @@ export default function AuthPage() {
     return !!(data?.full_name);
   }
 
+  async function loadFullProfile(userId) {
+    const { data } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", userId)
+      .maybeSingle();
+    return data || null;
+  }
+
   const handleAuthSuccess = async (user, kind) => {
     setAuthedUser(user);
+    if (editMode) {
+      const profile = await loadFullProfile(user.id);
+      setProfileData(profile);
+      setStep("profile");
+      return;
+    }
     if (kind === "existing") {
       const hasProfile = await checkProfile(user.id);
       setStep(hasProfile ? "done" : "profile");
@@ -746,16 +797,18 @@ export default function AuthPage() {
               <div style={cardStyle}>
                 <div style={{ marginBottom: 28, textAlign: "center" }}>
                   <h1 style={{ fontFamily: "system-ui, sans-serif", fontSize: "clamp(22px, 3vw, 28px)", marginBottom: 8 }}>
-                    {planParam ? "Create your account to continue" : "Welcome back"}
+                    {editMode ? "Sign in to edit your profile" : planParam ? "Create your account to continue" : "Welcome back"}
                   </h1>
                   <p style={{ color: C.muted, fontSize: 14, lineHeight: 1.7, margin: 0 }}>
-                    {planParam
-                      ? "Your account connects your profile to every payment — no re-entering details each time."
-                      : "Sign in to your Zanovo account."
+                    {editMode
+                      ? "Sign in to your Zanovo account to update your details."
+                      : planParam
+                        ? "Your account connects your profile to every payment — no re-entering details each time."
+                        : "Sign in to your Zanovo account."
                     }
                   </p>
                 </div>
-                <AuthStep defaultMode={planParam ? "signup" : "signin"} onSuccess={handleAuthSuccess} redirectTo={oauthRedirectTo} />
+                <AuthStep defaultMode={editMode || !planParam ? "signin" : "signup"} onSuccess={handleAuthSuccess} redirectTo={oauthRedirectTo} />
               </div>
             </motion.div>
           )}
@@ -763,7 +816,7 @@ export default function AuthPage() {
           {step === "profile" && authedUser && (
             <motion.div key="profile" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} transition={{ duration: 0.4, ease }}>
               <div style={{ ...cardStyle, maxWidth: 560 }}>
-                <ProfileStep user={authedUser} onSaved={handleProfileSaved} />
+                <ProfileStep user={authedUser} onSaved={handleProfileSaved} initialProfile={profileData} editMode={editMode} />
               </div>
             </motion.div>
           )}

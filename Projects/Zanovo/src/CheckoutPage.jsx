@@ -3,6 +3,7 @@ import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { PHONE_COUNTRY_OPTIONS, validateNationalPhone, nationalToE164 } from "./lib/phoneIntl";
 import { supabase } from "./lib/supabase";
+import { ADD_ONS, ADD_ON_MAP, formatRand, parseAddonParam } from "./lib/addons";
 
 const C = {
   bg: "#0A0D12",
@@ -229,6 +230,17 @@ export default function CheckoutPage() {
   const planKey = params.get("plan") || "growth";
   const plan = PLANS[planKey] || PLANS.growth;
 
+  // Add-ons selected from the pricing modal (editable here)
+  const [addonIds, setAddonIds] = useState(() => parseAddonParam(params.get("addons")));
+  const selectedAddons = addonIds.map((id) => ADD_ON_MAP[id]).filter(Boolean);
+  const availableAddons = ADD_ONS.filter((a) => !addonIds.includes(a.id));
+  const addonsCents = selectedAddons.reduce((sum, a) => sum + a.cents, 0);
+  const totalCents = plan.setupCents + addonsCents;
+  const totalDisplay = formatRand(totalCents);
+
+  const removeAddon = (id) => setAddonIds((ids) => ids.filter((x) => x !== id));
+  const addAddon = (id) => setAddonIds((ids) => (ids.includes(id) ? ids : [...ids, id]));
+
   const [form, setForm] = useState(EMPTY_FORM);
   const [errors, setErrors] = useState({});
   const [payMethod, setPayMethod] = useState("card"); // "eft" | "card"
@@ -244,7 +256,8 @@ export default function CheckoutPage() {
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) {
-        navigate(`/login?plan=${planKey}&next=/checkout%3Fplan%3D${planKey}`, { replace: true });
+        const addonsQS = params.get("addons") ? `&addons=${params.get("addons")}` : "";
+        navigate(`/login?plan=${planKey}${addonsQS}`, { replace: true });
         return;
       }
       setAuthUser(session.user);
@@ -320,7 +333,7 @@ export default function CheckoutPage() {
     const handler = window.PaystackPop.setup({
       key,
       email: form.email.trim().toLowerCase(),
-      amount: plan.setupCents,
+      amount: totalCents,
       currency: "ZAR",
       ref: `zanovo-${plan.slug}-${Date.now()}`,
       channels: ["card"],
@@ -330,6 +343,8 @@ export default function CheckoutPage() {
           { display_name: "Business Name", variable_name: "business_name", value: form.business.trim() },
           { display_name: "Phone", variable_name: "phone", value: nationalToE164(form.phone.trim(), form.phoneCountry) ?? form.phone.trim() },
           { display_name: "Plan", variable_name: "plan", value: plan.name },
+          { display_name: "Add-ons", variable_name: "addons", value: selectedAddons.map((a) => a.name).join(", ") || "None" },
+          { display_name: "Total", variable_name: "total", value: totalDisplay },
           { display_name: "User ID", variable_name: "user_id", value: authUser?.id ?? "" },
         ],
       },
@@ -377,62 +392,116 @@ export default function CheckoutPage() {
         alignItems: "start",
       }}>
 
-        {/* ── Left: Plan summary + reassurance ── */}
+        {/* ── Left: Cart ── */}
         <div>
-          <div style={{
-            display: "inline-flex", alignItems: "center",
-            padding: "4px 14px", borderRadius: 100,
-            background: "rgba(255,107,0,0.08)", border: "1px solid rgba(255,107,0,0.15)",
-            color: C.accent, fontSize: 12, fontWeight: 600, marginBottom: 20,
-          }}>
-            {plan.tag}
-          </div>
-
-          <h1 style={{ fontSize: "clamp(26px, 4vw, 42px)", marginBottom: 8, fontFamily: "system-ui, sans-serif" }}>
-            {plan.name}
+          <h1 style={{ fontSize: "clamp(26px, 4vw, 38px)", marginBottom: 8, fontFamily: "system-ui, sans-serif" }}>
+            Your order
           </h1>
           <p style={{ color: C.muted, fontSize: 15, lineHeight: 1.7, marginBottom: 28 }}>
-            Reserve your spot with a once-off setup fee. Your monthly retainer only begins after your website and systems are live.
+            Review your selection below. Your monthly retainer only begins once your website and systems are live.
           </p>
 
-          {/* Fee cards */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 32 }}>
-            <div style={{ padding: "16px 18px", borderRadius: 12, background: "rgba(255,107,0,0.08)", border: "1px solid rgba(255,107,0,0.2)" }}>
-              <div style={{ fontSize: 11, color: C.muted, fontWeight: 500, marginBottom: 6, letterSpacing: "0.04em" }}>Paying today</div>
-              <div style={{ fontSize: 22, fontWeight: 700, color: C.accent, letterSpacing: "-0.02em", fontFamily: "system-ui, sans-serif" }}>{plan.setupDisplay}</div>
-              <div style={{ fontSize: 11, color: C.muted, marginTop: 3 }}>Once-off setup fee</div>
+          {/* Plan line item */}
+          <div style={{ padding: "20px 22px", borderRadius: 16, background: C.glass, border: `1px solid ${C.border}`, marginBottom: 14 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "flex-start" }}>
+              <div>
+                <div style={{
+                  display: "inline-flex", alignItems: "center", padding: "3px 12px", borderRadius: 100,
+                  background: "rgba(255,107,0,0.08)", border: "1px solid rgba(255,107,0,0.15)",
+                  color: C.accent, fontSize: 11, fontWeight: 600, marginBottom: 10,
+                }}>
+                  {plan.tag}
+                </div>
+                <h3 style={{ fontSize: 20, margin: 0, fontFamily: "system-ui, sans-serif" }}>{plan.name}</h3>
+                <p style={{ fontSize: 13, color: C.muted, margin: "4px 0 0" }}>Once-off setup fee · then {plan.monthlyDisplay}/mo after go-live</p>
+              </div>
+              <div style={{ fontSize: 20, fontWeight: 700, color: C.accent, whiteSpace: "nowrap", fontFamily: "system-ui, sans-serif" }}>
+                {plan.setupDisplay}
+              </div>
             </div>
-            <div style={{ padding: "16px 18px", borderRadius: 12, background: C.glass, border: `1px solid ${C.border}` }}>
-              <div style={{ fontSize: 11, color: C.muted, fontWeight: 500, marginBottom: 6, letterSpacing: "0.04em" }}>After go-live</div>
-              <div style={{ fontSize: 22, fontWeight: 700, color: C.text, letterSpacing: "-0.02em", fontFamily: "system-ui, sans-serif" }}>{plan.monthlyDisplay}</div>
-              <div style={{ fontSize: 11, color: C.muted, marginTop: 3 }}>Monthly retainer</div>
+
+            <div style={{ height: 1, background: C.border, margin: "16px 0" }} />
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
+              {plan.features.map((f) => (
+                <div key={f} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                  <span style={{ color: C.green, flexShrink: 0, marginTop: 1 }}><CheckIcon /></span>
+                  <span style={{ fontSize: 13, color: C.muted, lineHeight: 1.5 }}>{f}</span>
+                </div>
+              ))}
             </div>
           </div>
 
+          {/* Add-on line items */}
+          {selectedAddons.map((a) => (
+            <div key={a.id} style={{ padding: "18px 22px", borderRadius: 16, background: C.glass, border: `1px solid ${C.border}`, marginBottom: 14 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "flex-start" }}>
+                <div>
+                  <h4 style={{ fontSize: 16, margin: 0, fontFamily: "system-ui, sans-serif", color: C.text }}>{a.name}</h4>
+                  <p style={{ fontSize: 13, color: C.muted, lineHeight: 1.55, margin: "5px 0 0" }}>{a.desc}</p>
+                </div>
+                <div style={{ fontSize: 17, fontWeight: 700, color: C.text, whiteSpace: "nowrap", fontFamily: "system-ui, sans-serif" }}>
+                  {formatRand(a.cents)}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => removeAddon(a.id)}
+                style={{
+                  marginTop: 12, background: "none", border: "none", cursor: "pointer",
+                  color: C.muted, fontSize: 13, fontWeight: 500, padding: 0,
+                  fontFamily: "system-ui, sans-serif", textDecoration: "underline", textUnderlineOffset: 3,
+                }}
+              >
+                Remove
+              </button>
+            </div>
+          ))}
+
+          {/* Add more services */}
+          {availableAddons.length > 0 && (
+            <div style={{ padding: "18px 22px", borderRadius: 16, background: "rgba(255,255,255,0.02)", border: `1px dashed ${C.border}`, marginBottom: 14 }}>
+              <p style={{ fontSize: 12, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 14px" }}>
+                Add more to your order
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                {availableAddons.map((a) => (
+                  <div key={a.id} style={{ display: "flex", justifyContent: "space-between", gap: 14, alignItems: "flex-start" }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: "flex", gap: 8, alignItems: "baseline", flexWrap: "wrap" }}>
+                        <span style={{ fontSize: 14, fontWeight: 600, color: C.text }}>{a.name}</span>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: C.accent }}>{formatRand(a.cents)}</span>
+                      </div>
+                      <p style={{ fontSize: 12, color: C.muted, lineHeight: 1.55, margin: "4px 0 0" }}>{a.desc}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => addAddon(a.id)}
+                      style={{
+                        flexShrink: 0, padding: "8px 14px", borderRadius: 8, cursor: "pointer",
+                        background: "rgba(255,107,0,0.1)", border: "1px solid rgba(255,107,0,0.3)",
+                        color: C.accent, fontSize: 13, fontWeight: 600, fontFamily: "system-ui, sans-serif",
+                      }}
+                    >
+                      + Add
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Reassurance */}
-          <div style={{ padding: "22px 20px", borderRadius: 14, marginBottom: 28, background: "rgba(255,107,0,0.06)", border: "1px solid rgba(255,107,0,0.18)" }}>
+          <div style={{ padding: "20px 20px", borderRadius: 14, marginTop: 14, background: "rgba(255,107,0,0.06)", border: "1px solid rgba(255,107,0,0.18)" }}>
             <p style={{ fontSize: 12, fontWeight: 700, color: C.accent, textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 10 }}>
               Important — read before paying
             </p>
-            <p style={{ fontSize: 15, color: C.text, lineHeight: 1.8, marginBottom: 12 }}>
-              <strong>You will receive a call before we build anything.</strong> Once payment is confirmed, we will contact you within one business day to schedule a dedicated planning session — before a single page is designed or a single system is configured.
+            <p style={{ fontSize: 14, color: C.text, lineHeight: 1.75, marginBottom: 10 }}>
+              <strong>You will receive a call before we build anything.</strong> Once payment is confirmed, we will contact you within one business day to schedule a dedicated planning session.
             </p>
-            <p style={{ fontSize: 14, color: C.muted, lineHeight: 1.7, margin: 0 }}>
+            <p style={{ fontSize: 13, color: C.muted, lineHeight: 1.7, margin: 0 }}>
               Nothing happens without your input and approval. You are in full control of the direction.
             </p>
-          </div>
-
-          {/* Included features */}
-          <p style={{ fontSize: 12, fontWeight: 600, color: C.muted, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 14 }}>
-            What's included
-          </p>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {plan.features.map((f) => (
-              <div key={f} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
-                <span style={{ color: C.green, flexShrink: 0, marginTop: 1 }}><CheckIcon /></span>
-                <span style={{ fontSize: 14, color: C.muted, lineHeight: 1.5 }}>{f}</span>
-              </div>
-            ))}
           </div>
         </div>
 
@@ -443,6 +512,31 @@ export default function CheckoutPage() {
           backdropFilter: "blur(16px)",
           position: isMobile ? "static" : "sticky", top: 32,
         }}>
+          {/* Order summary */}
+          <div style={{ padding: "18px 18px", borderRadius: 14, background: "rgba(255,255,255,0.03)", border: `1px solid ${C.border}`, marginBottom: 24 }}>
+            <p style={{ fontSize: 12, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 14px" }}>
+              Order summary
+            </p>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 9 }}>
+              <span style={{ fontSize: 14, color: C.text }}>{plan.name} · setup</span>
+              <span style={{ fontSize: 14, color: C.text, whiteSpace: "nowrap" }}>{plan.setupDisplay}</span>
+            </div>
+            {selectedAddons.map((a) => (
+              <div key={a.id} style={{ display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 9 }}>
+                <span style={{ fontSize: 14, color: C.muted }}>{a.name}</span>
+                <span style={{ fontSize: 14, color: C.muted, whiteSpace: "nowrap" }}>{formatRand(a.cents)}</span>
+              </div>
+            ))}
+            <div style={{ height: 1, background: C.border, margin: "14px 0" }} />
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
+              <span style={{ fontSize: 15, fontWeight: 700, color: C.text }}>Total today</span>
+              <span style={{ fontSize: 22, fontWeight: 700, color: C.accent, whiteSpace: "nowrap", fontFamily: "system-ui, sans-serif" }}>{totalDisplay}</span>
+            </div>
+            <p style={{ fontSize: 12, color: C.muted, lineHeight: 1.6, margin: "10px 0 0" }}>
+              Then {plan.monthlyDisplay}/mo retainer, starting only after your site goes live.
+            </p>
+          </div>
+
           <p style={{ fontSize: 12, fontWeight: 600, color: C.accent, textTransform: "uppercase", letterSpacing: "0.14em", marginBottom: 8 }}>
             Secure checkout
           </p>
@@ -593,7 +687,7 @@ export default function CheckoutPage() {
                   <CopyField label="Account number" value={EFT_DETAILS.accountNumber} />
                   <CopyField label="Account type" value={EFT_DETAILS.accountType} />
                   <CopyField label="Branch code" value={EFT_DETAILS.branchCode} />
-                  <CopyField label="Amount" value={plan.setupDisplay} />
+                  <CopyField label="Amount" value={totalDisplay} />
                   <CopyField
                     label="Payment reference (use exactly)"
                     value={paymentRef}
@@ -689,7 +783,7 @@ export default function CheckoutPage() {
                     cursor: cardStatus === "loading" ? "not-allowed" : "pointer", border: "none",
                   }}
                 >
-                  {cardStatus === "loading" ? "Opening payment..." : <>Pay {plan.setupDisplay} securely</>}
+                  {cardStatus === "loading" ? "Opening payment..." : <>Pay {totalDisplay} securely</>}
                 </motion.button>
 
                 <p style={{ fontSize: 12, color: C.muted, textAlign: "center", lineHeight: 1.6, margin: 0 }}>

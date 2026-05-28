@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { nationalToE164, PHONE_COUNTRY_OPTIONS, validateNationalPhone } from "./lib/phoneIntl";
 import { WHATSAPP_CHAT_URL } from "./constants/contact";
 import { supabase } from "./lib/supabase";
+import { ADD_ONS, formatRand } from "./lib/addons";
 
 /* ─── Design tokens ─── */
 const C = {
@@ -261,69 +262,17 @@ function Avatar({ name, size = 30 }) {
   );
 }
 
-function Navbar() {
-  const [open, setOpen] = useState(false);         // mobile menu
-  const [dropdownOpen, setDropdownOpen] = useState(false); // account dropdown
-  const [authUser, setAuthUser] = useState(null);
-  const [profile, setProfile] = useState(null);
-  const dropdownRef = useRef(null);
-  const isMobile = useIsMobile(700);
-  const navigate = useNavigate();
-
-  const scrollTo = (id) => {
-    document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
-    setOpen(false);
-  };
-
-  /* Load auth state + profile */
-  useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session?.user) {
-        setAuthUser(session.user);
-        loadProfile(session.user.id);
-      }
-    });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
-        setAuthUser(session.user);
-        loadProfile(session.user.id);
-      } else {
-        setAuthUser(null);
-        setProfile(null);
-      }
-    });
-    return () => subscription.unsubscribe();
-  }, []);
-
-  async function loadProfile(userId) {
-    const { data } = await supabase
-      .from("profiles")
-      .select("full_name, business_name")
-      .eq("id", userId)
-      .maybeSingle();
-    setProfile(data);
-  }
-
-  /* Close dropdown on outside click */
-  useEffect(() => {
-    if (!dropdownOpen) return;
-    const handler = (e) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
-        setDropdownOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [dropdownOpen]);
-
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    setDropdownOpen(false);
-    setOpen(false);
-  };
-
-  /* Account widget — shared between desktop and mobile */
-  const AccountWidget = () => (
+/* Account widget — shared between desktop and mobile */
+function AccountWidget({
+  authUser,
+  profile,
+  dropdownOpen,
+  setDropdownOpen,
+  dropdownRef,
+  onSignOut,
+  navigate,
+}) {
+  return (
     <div ref={dropdownRef} style={{ position: "relative" }}>
       {authUser ? (
         <button
@@ -406,7 +355,7 @@ function Navbar() {
             {/* Menu items */}
             <div style={{ padding: "8px" }}>
               <button
-                onClick={() => { navigate("/login"); setDropdownOpen(false); }}
+                onClick={() => { navigate("/login?edit=1"); setDropdownOpen(false); }}
                 style={{
                   width: "100%", background: "none", border: "none",
                   color: C.muted, fontSize: 13, fontWeight: 500,
@@ -427,7 +376,7 @@ function Navbar() {
               <div style={{ height: 1, background: C.border, margin: "6px 0" }} />
 
               <button
-                onClick={handleSignOut}
+                onClick={onSignOut}
                 style={{
                   width: "100%", background: "none", border: "none",
                   color: C.muted, fontSize: 13, fontWeight: 500,
@@ -450,6 +399,75 @@ function Navbar() {
       </AnimatePresence>
     </div>
   );
+}
+
+function Navbar() {
+  const [open, setOpen] = useState(false);         // mobile menu
+  const [dropdownOpen, setDropdownOpen] = useState(false); // account dropdown
+  const [authUser, setAuthUser] = useState(null);
+  const [profile, setProfile] = useState(null);
+  const dropdownRef = useRef(null);
+  const isMobile = useIsMobile(700);
+  const navigate = useNavigate();
+
+  const scrollTo = (id) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+    setOpen(false);
+  };
+
+  /* Load auth state + profile */
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadProfile = async (userId) => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("full_name, business_name")
+        .eq("id", userId)
+        .maybeSingle();
+      if (isMounted) setProfile(data);
+    };
+
+    const applySession = async (session) => {
+      if (session?.user) {
+        if (!isMounted) return;
+        setAuthUser(session.user);
+        await loadProfile(session.user.id);
+      } else if (isMounted) {
+        setAuthUser(null);
+        setProfile(null);
+      }
+    };
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      void applySession(session);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      void applySession(session);
+    });
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  /* Close dropdown on outside click */
+  useEffect(() => {
+    if (!dropdownOpen) return;
+    const handler = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [dropdownOpen]);
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    setDropdownOpen(false);
+    setOpen(false);
+  };
 
   return (
     <motion.div
@@ -481,7 +499,15 @@ function Navbar() {
           {isMobile ? (
             /* Mobile: account widget + hamburger */
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <AccountWidget />
+              <AccountWidget
+                authUser={authUser}
+                profile={profile}
+                dropdownOpen={dropdownOpen}
+                setDropdownOpen={setDropdownOpen}
+                dropdownRef={dropdownRef}
+                onSignOut={handleSignOut}
+                navigate={navigate}
+              />
               <button
                 onClick={() => setOpen((v) => !v)}
                 aria-label="Toggle menu"
@@ -525,7 +551,15 @@ function Navbar() {
                 Get Started
               </BtnPrimary>
               <div style={{ width: 1, height: 20, background: C.border, margin: "0 6px" }} />
-              <AccountWidget />
+              <AccountWidget
+                authUser={authUser}
+                profile={profile}
+                dropdownOpen={dropdownOpen}
+                setDropdownOpen={setDropdownOpen}
+                dropdownRef={dropdownRef}
+                onSignOut={handleSignOut}
+                navigate={navigate}
+              />
             </div>
           )}
         </div>
@@ -986,9 +1020,190 @@ const plans = [
   },
 ];
 
+/* ─── Add-ons modal ─── */
+function AddOnsModal({ plan, onClose }) {
+  const navigate = useNavigate();
+  const isMobile = useIsMobile();
+  const [selected, setSelected] = useState([]);
+
+  // Lock background scroll while the modal is open
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = ""; };
+  }, []);
+
+  const setupCents = parseInt(plan.setup.replace(/[^\d]/g, ""), 10) * 100;
+  const addonsCents = selected.reduce((sum, id) => {
+    const a = ADD_ONS.find((x) => x.id === id);
+    return sum + (a ? a.cents : 0);
+  }, 0);
+  const totalCents = setupCents + addonsCents;
+
+  const toggle = (id) =>
+    setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
+
+  const goToCheckout = () => {
+    const addonsParam = selected.length ? `&addons=${selected.join(",")}` : "";
+    navigate(`/login?plan=${plan.slug}${addonsParam}`);
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
+      onClick={onClose}
+      style={{
+        position: "fixed", inset: 0, zIndex: 1000,
+        background: "rgba(5,7,10,0.72)", backdropFilter: "blur(6px)",
+        display: "flex", alignItems: isMobile ? "flex-end" : "center", justifyContent: "center",
+        padding: isMobile ? 0 : 24,
+      }}
+    >
+      <motion.div
+        initial={{ opacity: 0, y: isMobile ? 60 : 20, scale: isMobile ? 1 : 0.97 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: isMobile ? 60 : 20, scale: isMobile ? 1 : 0.97 }}
+        transition={{ duration: 0.3, ease }}
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          width: "100%", maxWidth: 540, maxHeight: isMobile ? "92svh" : "88svh",
+          overflowY: "auto",
+          background: "#0E1218",
+          border: `1px solid ${C.border}`,
+          borderRadius: isMobile ? "20px 20px 0 0" : 20,
+          boxShadow: "0 24px 80px rgba(0,0,0,0.5)",
+        }}
+      >
+        {/* Header */}
+        <div style={{
+          position: "sticky", top: 0, zIndex: 1,
+          padding: "24px 28px 18px",
+          background: "#0E1218",
+          borderBottom: `1px solid ${C.border}`,
+          display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16,
+        }}>
+          <div>
+            <p style={{ fontSize: 12, fontWeight: 600, color: C.accent, textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 8 }}>
+              {plan.name}
+            </p>
+            <h3 style={{ fontSize: "clamp(20px, 3vw, 24px)", margin: 0, fontFamily: "system-ui, sans-serif" }}>
+              Boost your package
+            </h3>
+            <p style={{ fontSize: 14, color: C.muted, lineHeight: 1.6, marginTop: 8, marginBottom: 0 }}>
+              Optional services that make your website work harder. Add any that fit — or skip and continue.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            style={{
+              flexShrink: 0, width: 32, height: 32, borderRadius: 8,
+              background: "rgba(255,255,255,0.06)", border: `1px solid ${C.border}`,
+              color: C.muted, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 18, lineHeight: 1,
+            }}
+          >
+            ×
+          </button>
+        </div>
+
+        {/* Add-on list */}
+        <div style={{ padding: "20px 28px", display: "flex", flexDirection: "column", gap: 12 }}>
+          {ADD_ONS.map((a) => {
+            const isOn = selected.includes(a.id);
+            return (
+              <button
+                key={a.id}
+                type="button"
+                onClick={() => toggle(a.id)}
+                style={{
+                  display: "flex", alignItems: "flex-start", gap: 14, textAlign: "left",
+                  padding: "16px", borderRadius: 12, cursor: "pointer",
+                  background: isOn ? "rgba(255,107,0,0.08)" : "rgba(255,255,255,0.02)",
+                  border: `1px solid ${isOn ? "rgba(255,107,0,0.4)" : C.border}`,
+                  transition: "background 0.15s, border-color 0.15s",
+                  width: "100%",
+                }}
+              >
+                {/* Checkbox */}
+                <span style={{
+                  flexShrink: 0, marginTop: 2, width: 22, height: 22, borderRadius: 6,
+                  background: isOn ? `linear-gradient(135deg, ${C.accent}, ${C.accentLt})` : "transparent",
+                  border: `1px solid ${isOn ? C.accent : "rgba(255,255,255,0.25)"}`,
+                  display: "flex", alignItems: "center", justifyContent: "center", color: "#fff",
+                }}>
+                  {isOn && (
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  )}
+                </span>
+                <span style={{ flex: 1 }}>
+                  <span style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "baseline" }}>
+                    <span style={{ fontSize: 15, fontWeight: 600, color: C.text }}>{a.name}</span>
+                    <span style={{ fontSize: 15, fontWeight: 700, color: C.accent, whiteSpace: "nowrap" }}>{formatRand(a.cents)}</span>
+                  </span>
+                  <span style={{ display: "block", fontSize: 13, color: C.muted, lineHeight: 1.6, marginTop: 5 }}>
+                    {a.desc}
+                  </span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Footer — total + actions */}
+        <div style={{
+          position: "sticky", bottom: 0,
+          padding: "18px 28px 24px",
+          background: "#0E1218",
+          borderTop: `1px solid ${C.border}`,
+        }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 16 }}>
+            <span style={{ fontSize: 14, color: C.muted }}>
+              Setup total{selected.length ? ` (${selected.length} add-on${selected.length > 1 ? "s" : ""})` : ""}
+            </span>
+            <span style={{ fontSize: 22, fontWeight: 700, color: C.text, fontFamily: "system-ui, sans-serif" }}>
+              {formatRand(totalCents)}
+            </span>
+          </div>
+          <motion.button
+            type="button"
+            onClick={goToCheckout}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            style={{
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+              width: "100%", padding: "15px", borderRadius: 10, border: "none",
+              background: `linear-gradient(135deg, ${C.accent}, ${C.accentLt})`,
+              color: "#fff", fontWeight: 700, fontSize: 15, fontFamily: "system-ui, sans-serif",
+              boxShadow: "0 0 28px rgba(255,107,0,0.3)", cursor: "pointer", marginBottom: 10,
+            }}
+          >
+            Continue to checkout {Icon.arrow}
+          </motion.button>
+          <button
+            type="button"
+            onClick={goToCheckout}
+            style={{
+              width: "100%", background: "none", border: "none", cursor: "pointer",
+              color: C.muted, fontSize: 13, fontWeight: 500, fontFamily: "system-ui, sans-serif",
+            }}
+          >
+            {selected.length ? "Continue without changing" : "Skip — continue without add-ons"}
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
 function PricingSection() {
   const isMobile = useIsMobile();
-  const navigate = useNavigate();
+  const [modalPlan, setModalPlan] = useState(null);
   return (
     <section id="pricing" style={{ padding: "100px 24px", maxWidth: 1100, margin: "0 auto" }}>
       <Reveal style={{ marginBottom: 56, textAlign: "center" }}>
@@ -1102,14 +1317,14 @@ function PricingSection() {
                 {/* CTA */}
                 {featured ? (
                   <BtnPrimary
-                    onClick={() => navigate(`/login?plan=${slug}`)}
+                    onClick={() => setModalPlan({ slug, name, setup })}
                     style={{ width: "100%", justifyContent: "center" }}
                   >
                     {cta} {Icon.arrow}
                   </BtnPrimary>
                 ) : (
                   <motion.button
-                    onClick={() => navigate(`/login?plan=${slug}`)}
+                    onClick={() => setModalPlan({ slug, name, setup })}
                     whileHover={{ borderColor: "rgba(255,255,255,0.25)" }}
                     style={{
                       width: "100%", padding: "13px", borderRadius: 10,
@@ -1134,6 +1349,12 @@ function PricingSection() {
           Not sure which plan fits your business? Book a free strategy call — we'll give you an honest recommendation, even if it means a smaller package.
         </p>
       </Reveal>
+
+      <AnimatePresence>
+        {modalPlan && (
+          <AddOnsModal plan={modalPlan} onClose={() => setModalPlan(null)} />
+        )}
+      </AnimatePresence>
     </section>
   );
 }
