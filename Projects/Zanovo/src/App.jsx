@@ -4,7 +4,9 @@ import { Link, useNavigate } from "react-router-dom";
 import { nationalToE164, PHONE_COUNTRY_OPTIONS, validateNationalPhone } from "./lib/phoneIntl";
 import { WHATSAPP_CHAT_URL } from "./constants/contact";
 import { supabase } from "./lib/supabase";
+import { getSupabaseFunctionHeaders } from "./lib/supabaseFunctions";
 import { ADD_ONS, formatRand } from "./lib/addons";
+import { trackEvent } from "./lib/analytics";
 
 /* ─── Design tokens ─── */
 const C = {
@@ -78,17 +80,57 @@ const getLeadFunctionUrl = () => {
   return `${supabaseUrl.replace(/\/$/, "")}/functions/v1/send-lead-email`;
 };
 
+/* ─── reCAPTCHA v3 (invisible bot protection on the contact form) ─── */
+const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
+
+function loadRecaptcha() {
+  if (!RECAPTCHA_SITE_KEY || typeof window === "undefined") return;
+  if (document.getElementById("recaptcha-v3")) return;
+  const s = document.createElement("script");
+  s.id = "recaptcha-v3";
+  s.async = true;
+  s.src = `https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}`;
+  document.head.appendChild(s);
+}
+
+// Returns a verification token, or null if reCAPTCHA isn't configured/ready.
+function getRecaptchaToken(action, maxWaitMs = 5000) {
+  return new Promise((resolve) => {
+    if (!RECAPTCHA_SITE_KEY) {
+      resolve(null);
+      return;
+    }
+
+    const deadline = Date.now() + maxWaitMs;
+    const tryExecute = () => {
+      if (!window.grecaptcha) {
+        if (Date.now() < deadline) {
+          setTimeout(tryExecute, 100);
+          return;
+        }
+        resolve(null);
+        return;
+      }
+      window.grecaptcha.ready(() => {
+        window.grecaptcha
+          .execute(RECAPTCHA_SITE_KEY, { action })
+          .then(resolve)
+          .catch(() => resolve(null));
+      });
+    };
+    tryExecute();
+  });
+}
+
 const notifyWhatsAppClick = () => {
+  trackEvent("whatsapp_click");
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
   const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
   if (!supabaseUrl || !anonKey) return;
   fetch(`${supabaseUrl.replace(/\/$/, "")}/functions/v1/notify-whatsapp-click`, {
     method: "POST",
     keepalive: true,
-    headers: {
-      "Authorization": `Bearer ${anonKey}`,
-      "Content-Type": "application/json",
-    },
+    headers: getSupabaseFunctionHeaders(),
   }).catch(() => {}); // fire-and-forget — never block navigation
 };
 
@@ -1043,6 +1085,7 @@ function AddOnsModal({ plan, onClose }) {
     setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
 
   const goToCheckout = () => {
+    trackEvent("begin_checkout", { plan: plan.slug, addons: selected.join(",") || "none" });
     const addonsParam = selected.length ? `&addons=${selected.join(",")}` : "";
     navigate(`/login?plan=${plan.slug}${addonsParam}`);
   };
@@ -1317,14 +1360,14 @@ function PricingSection() {
                 {/* CTA */}
                 {featured ? (
                   <BtnPrimary
-                    onClick={() => setModalPlan({ slug, name, setup })}
+                    onClick={() => { trackEvent("select_plan", { plan: slug }); setModalPlan({ slug, name, setup }); }}
                     style={{ width: "100%", justifyContent: "center" }}
                   >
                     {cta} {Icon.arrow}
                   </BtnPrimary>
                 ) : (
                   <motion.button
-                    onClick={() => setModalPlan({ slug, name, setup })}
+                    onClick={() => { trackEvent("select_plan", { plan: slug }); setModalPlan({ slug, name, setup }); }}
                     whileHover={{ borderColor: "rgba(255,255,255,0.25)" }}
                     style={{
                       width: "100%", padding: "13px", borderRadius: 10,
@@ -1365,6 +1408,9 @@ function ContactSection() {
   const [status, setStatus] = useState("idle");
   const [errorMsg, setErrorMsg] = useState("");
   const isMobile = useIsMobile();
+
+  // Load the invisible reCAPTCHA script once this section is in the page
+  useEffect(() => { loadRecaptcha(); }, []);
 
   const includes = [
     "A full audit of your website and Google presence",
@@ -1412,25 +1458,34 @@ function ContactSection() {
 
     const phoneE164 = nationalToE164(lead.phone, lead.phoneCountry) ?? lead.phone;
 
+    // Get an invisible reCAPTCHA token (null if not configured — backend handles that)
+    const recaptchaToken = await getRecaptchaToken("submit_lead");
+    if (RECAPTCHA_SITE_KEY && !recaptchaToken) {
+      setErrorMsg(
+        "Security check didn't load. Please refresh the page and try again, or email us at thabiso@zanovo.co.za",
+      );
+      setStatus("error");
+      return;
+    }
+
     try {
       const response = await fetch(getLeadFunctionUrl(), {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-        },
+        headers: getSupabaseFunctionHeaders(),
         body: JSON.stringify({
           name: lead.name,
           business: lead.business,
           email: lead.email,
           phone: phoneE164,
           message: lead.message || null,
+          recaptchaToken,
         }),
       });
 
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) {
-        throw new Error(payload.error || `Lead function returned ${response.status}`);
+        const serverMsg = payload.error || payload.message || payload.msg;
+        throw new Error(serverMsg || `Lead function returned ${response.status}`);
       }
 
       setForm(EMPTY_FORM);
@@ -1439,7 +1494,14 @@ function ContactSection() {
       if (import.meta.env.DEV) {
         console.error("[Contact] submission error:", err);
       }
-      setErrorMsg("Something went wrong. Please try again, or email us directly at thabiso@zanovo.co.za");
+      const fallback = "Something went wrong. Please try again, or email us directly at thabiso@zanovo.co.za";
+      const msg = err instanceof Error ? err.message : "";
+      const safeServerMsg =
+        msg &&
+        !msg.includes("Lead function returned") &&
+        !msg.toLowerCase().includes("failed to fetch") &&
+        !msg.toLowerCase().includes("network");
+      setErrorMsg(safeServerMsg ? msg : fallback);
       setStatus("error");
     }
   };
@@ -1602,6 +1664,19 @@ function ContactSection() {
               </BtnPrimary>
               <p style={{ fontSize: 12, color: C.muted, textAlign: "center", lineHeight: 1.6 }}>
                 No commitment required. We respond within one business day to confirm your call time.
+              </p>
+
+              {/* reCAPTCHA disclosure — required by Google when the badge is hidden */}
+              <p style={{ fontSize: 11, color: C.muted, textAlign: "center", lineHeight: 1.6, opacity: 0.7, margin: 0 }}>
+                Protected by reCAPTCHA — Google's{" "}
+                <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" style={{ color: C.muted, textDecoration: "underline" }}>
+                  Privacy Policy
+                </a>{" "}
+                and{" "}
+                <a href="https://policies.google.com/terms" target="_blank" rel="noopener noreferrer" style={{ color: C.muted, textDecoration: "underline" }}>
+                  Terms
+                </a>{" "}
+                apply.
               </p>
 
               {/* Divider */}

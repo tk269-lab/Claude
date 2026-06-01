@@ -39,5 +39,9 @@ out
 .env.development
 .env.production
 
+# GA reporting (CRITICAL — never commit the service-account key)
+.ga-service-account.json
+analytics-reports/
+
 # mac
 .DS_Store

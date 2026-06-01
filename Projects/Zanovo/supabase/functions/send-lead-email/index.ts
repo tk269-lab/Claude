@@ -7,6 +7,7 @@ type LeadPayload = {
   email?: unknown;
   phone?: unknown;
   message?: unknown;
+  recaptchaToken?: unknown;
 };
 
 type Lead = {
@@ -84,6 +85,42 @@ const validateLead = (lead: Lead) => {
   if (lead.phone.length > FIELD_LIMITS.phone) return "Phone number is too long.";
   if ((lead.message || "").length > FIELD_LIMITS.message) return "Message is too long.";
   return "";
+};
+
+// ── reCAPTCHA v3 verification ─────────────────────────────────────────────────
+// Returns { ok: true } when valid. If RECAPTCHA_SECRET_KEY is not set, this is
+// skipped (so the form keeps working until the key is added in Supabase).
+const verifyRecaptcha = async (
+  token: string,
+  remoteIp: string | null,
+): Promise<{ ok: boolean; reason?: string }> => {
+  const secret = Deno.env.get("RECAPTCHA_SECRET_KEY");
+  if (!secret) {
+    console.warn("RECAPTCHA_SECRET_KEY not set; skipping reCAPTCHA verification.");
+    return { ok: true };
+  }
+  if (!token) return { ok: false, reason: "missing-token" };
+
+  const params = new URLSearchParams({ secret, response: token });
+  if (remoteIp) params.set("remoteip", remoteIp);
+
+  try {
+    const res = await fetch("https://www.google.com/recaptcha/api/siteverify", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: params.toString(),
+    });
+    const data = await res.json();
+    const minScore = Number(Deno.env.get("RECAPTCHA_MIN_SCORE") || 0.5);
+
+    if (!data.success) return { ok: false, reason: "verification-failed" };
+    if (data.action && data.action !== "submit_lead") return { ok: false, reason: "bad-action" };
+    if (typeof data.score === "number" && data.score < minScore) return { ok: false, reason: "low-score" };
+    return { ok: true };
+  } catch (err) {
+    console.error("reCAPTCHA verify error:", err instanceof Error ? err.message : err);
+    return { ok: false, reason: "verify-error" };
+  }
 };
 
 const sha256 = async (value: string) => {
@@ -326,6 +363,18 @@ Deno.serve(async (req) => {
   const validationError = validateLead(lead);
   if (validationError) {
     return json({ error: validationError }, 400, origin);
+  }
+
+  // Bot check — reCAPTCHA v3 (skipped automatically if no secret key is set)
+  const recaptchaToken = asString(payload.recaptchaToken);
+  const remoteIp =
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    req.headers.get("cf-connecting-ip") ||
+    null;
+  const recaptcha = await verifyRecaptcha(recaptchaToken, remoteIp);
+  if (!recaptcha.ok) {
+    console.warn(`reCAPTCHA rejected submission: ${recaptcha.reason}`);
+    return json({ error: "We couldn't verify your submission. Please refresh the page and try again." }, 403, origin);
   }
 
   const supabase = createClient(supabaseUrl, serviceRoleKey, {

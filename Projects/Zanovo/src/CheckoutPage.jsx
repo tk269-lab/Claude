@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { PHONE_COUNTRY_OPTIONS, validateNationalPhone, nationalToE164 } from "./lib/phoneIntl";
 import { supabase } from "./lib/supabase";
 import { ADD_ONS, ADD_ON_MAP, formatRand, parseAddonParam } from "./lib/addons";
+import { trackEvent } from "./lib/analytics";
 
 const C = {
   bg: "#0A0D12",
@@ -314,6 +315,7 @@ export default function CheckoutPage() {
     const errs = validate();
     if (Object.keys(errs).length) { setErrors(errs); return; }
     setErrors({});
+    trackEvent("payment_submitted", { method: "eft", plan: plan.slug, value: totalCents / 100 });
     setSuccessMethod("eft");
   };
 
@@ -330,6 +332,7 @@ export default function CheckoutPage() {
       return;
     }
     setCardStatus("loading");
+    trackEvent("payment_submitted", { method: "card", plan: plan.slug, value: totalCents / 100 });
     const handler = window.PaystackPop.setup({
       key,
       email: form.email.trim().toLowerCase(),
@@ -348,7 +351,10 @@ export default function CheckoutPage() {
           { display_name: "User ID", variable_name: "user_id", value: authUser?.id ?? "" },
         ],
       },
-      callback: () => { setSuccessMethod("card"); },
+      callback: () => {
+        trackEvent("purchase", { method: "card", plan: plan.slug, value: totalCents / 100, currency: "ZAR" });
+        setSuccessMethod("card");
+      },
       onClose: () => { setCardStatus("idle"); },
     });
     handler.openIframe();
