@@ -197,7 +197,7 @@ function PasswordChecklist({ password }) {
 }
 
 function AuthStep({ defaultMode = "signup", onSuccess, redirectTo }) {
-  const [mode, setMode] = useState(defaultMode); // "signup" | "signin"
+  const [mode, setMode] = useState(defaultMode); // "signup" | "signin" | "reset"
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -205,6 +205,7 @@ function AuthStep({ defaultMode = "signup", onSuccess, redirectTo }) {
   const [loading, setLoading] = useState(false);
   const [globalError, setGlobalError] = useState("");
   const [passwordFocused, setPasswordFocused] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
 
   const validatePassword = (p) => {
     if (!PASSWORD_RULES.every(({ test }) => test(p))) {
@@ -216,7 +217,9 @@ function AuthStep({ defaultMode = "signup", onSuccess, redirectTo }) {
   const validate = () => {
     const e = {};
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) e.email = "Enter a valid email address.";
-    if (mode === "signup") {
+    if (mode === "reset") {
+      // Only the email is needed to request a reset link
+    } else if (mode === "signup") {
       const pwErr = validatePassword(password);
       if (pwErr) e.password = pwErr;
       if (!confirmPassword) e.confirmPassword = "Please confirm your password.";
@@ -236,7 +239,16 @@ function AuthStep({ defaultMode = "signup", onSuccess, redirectTo }) {
     setLoading(true);
 
     try {
-      if (mode === "signup") {
+      if (mode === "reset") {
+        const { error } = await supabase.auth.resetPasswordForEmail(
+          email.trim().toLowerCase(),
+          { redirectTo: `${window.location.origin}/login?recovery=1` },
+        );
+        if (error) throw error;
+        setResetSent(true);
+        setLoading(false);
+        return;
+      } else if (mode === "signup") {
         const { data, error } = await supabase.auth.signUp({
           email: email.trim().toLowerCase(),
           password,
@@ -297,6 +309,81 @@ function AuthStep({ defaultMode = "signup", onSuccess, redirectTo }) {
         >
           Sign in once confirmed →
         </button>
+      </motion.div>
+    );
+  }
+
+  // Reset link sent confirmation
+  if (resetSent) {
+    return (
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease }}
+        style={{ textAlign: "center", padding: "20px 0" }}>
+        <div style={{
+          width: 56, height: 56, borderRadius: "50%",
+          background: "rgba(255,107,0,0.1)", border: "1px solid rgba(255,107,0,0.25)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          margin: "0 auto 24px",
+        }}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={C.accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+            <polyline points="22,6 12,13 2,6" />
+          </svg>
+        </div>
+        <h2 style={{ fontFamily: "system-ui, sans-serif", fontSize: 22, marginBottom: 12 }}>Check your email</h2>
+        <p style={{ color: C.muted, fontSize: 15, lineHeight: 1.75, marginBottom: 24 }}>
+          If an account exists for <strong style={{ color: C.text }}>{email}</strong>, we've sent a password reset link.
+          The link expires in one hour for your security.
+        </p>
+        <button
+          type="button"
+          onClick={() => { setResetSent(false); setMode("signin"); setErrors({}); setGlobalError(""); }}
+          style={{ background: "none", border: "none", color: C.accent, cursor: "pointer", fontSize: 14, fontWeight: 600, fontFamily: "system-ui, sans-serif" }}
+        >
+          ← Back to sign in
+        </button>
+      </motion.div>
+    );
+  }
+
+  // Password reset request view (just the email field)
+  if (mode === "reset") {
+    return (
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease }}>
+        <div style={{ marginBottom: 20 }}>
+          <h2 style={{ fontFamily: "system-ui, sans-serif", fontSize: 20, marginBottom: 8 }}>Reset your password</h2>
+          <p style={{ color: C.muted, fontSize: 14, lineHeight: 1.7, margin: 0 }}>
+            Enter your account email and we'll send you a link to set a new password.
+          </p>
+        </div>
+        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <Field label="Email address" error={errors.email}>
+            <input
+              type="email"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              maxLength={254}
+              autoComplete="email"
+              style={inputStyle(!!errors.email)}
+              onFocus={(e) => { e.target.style.borderColor = "rgba(255,107,0,0.5)"; }}
+              onBlur={(e) => { e.target.style.borderColor = errors.email ? "rgba(255,80,40,0.5)" : C.border; }}
+            />
+          </Field>
+          {globalError && (
+            <div style={{ padding: "12px 14px", borderRadius: 10, background: "rgba(255,80,40,0.1)", border: "1px solid rgba(255,80,40,0.25)", color: C.red, fontSize: 14, lineHeight: 1.6 }}>
+              {globalError}
+            </div>
+          )}
+          <PrimaryBtn loading={loading}>
+            {loading ? "Sending…" : "Send reset link →"}
+          </PrimaryBtn>
+          <p style={{ fontSize: 13, color: C.muted, textAlign: "center", margin: 0 }}>
+            <button type="button" onClick={() => { setMode("signin"); setErrors({}); setGlobalError(""); }}
+              style={{ background: "none", border: "none", color: C.accent, cursor: "pointer", fontSize: 13, fontWeight: 600, fontFamily: "system-ui, sans-serif" }}>
+              ← Back to sign in
+            </button>
+          </p>
+        </form>
       </motion.div>
     );
   }
@@ -363,6 +450,20 @@ function AuthStep({ defaultMode = "signup", onSuccess, redirectTo }) {
           {/* Live requirements checklist — only on sign-up, shown when focused or password has content */}
           {mode === "signup" && (passwordFocused || password.length > 0) && (
             <PasswordChecklist password={password} />
+          )}
+          {/* Forgot password — sign-in only */}
+          {mode === "signin" && (
+            <button
+              type="button"
+              onClick={() => { setMode("reset"); setErrors({}); setGlobalError(""); }}
+              style={{
+                alignSelf: "flex-end", marginTop: 2, background: "none", border: "none",
+                color: C.muted, cursor: "pointer", fontSize: 12.5, fontWeight: 500,
+                fontFamily: "system-ui, sans-serif", padding: 0,
+              }}
+            >
+              Forgot password?
+            </button>
           )}
         </Field>
 
@@ -649,6 +750,121 @@ function ProfileStep({ user, onSaved, initialProfile = null, editMode = false })
   );
 }
 
+/* ─── Set new password (after clicking the reset link) ─── */
+function SetNewPasswordStep({ onDone }) {
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [globalError, setGlobalError] = useState("");
+  const [focused, setFocused] = useState(false);
+
+  const validate = () => {
+    const e = {};
+    if (!PASSWORD_RULES.every(({ test }) => test(password))) {
+      e.password = "Password does not meet the requirements below.";
+    }
+    if (!confirmPassword) e.confirmPassword = "Please confirm your password.";
+    else if (confirmPassword !== password) e.confirmPassword = "Passwords do not match.";
+    return e;
+  };
+
+  const handleSubmit = async (ev) => {
+    ev.preventDefault();
+    const errs = validate();
+    if (Object.keys(errs).length) { setErrors(errs); return; }
+    setErrors({}); setGlobalError(""); setLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password });
+      if (error) throw error;
+      onDone();
+    } catch (err) {
+      setGlobalError(err?.message || "Could not update your password. The link may have expired — request a new one.");
+      setLoading(false);
+    }
+  };
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease }}>
+      <div style={{ marginBottom: 20 }}>
+        <h2 style={{ fontFamily: "system-ui, sans-serif", fontSize: 22, marginBottom: 8 }}>Set a new password</h2>
+        <p style={{ color: C.muted, fontSize: 14, lineHeight: 1.7, margin: 0 }}>
+          Choose a new password for your account. Make it strong.
+        </p>
+      </div>
+      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <Field label="New password" error={errors.password}>
+          <input
+            type="password"
+            placeholder="Create a strong password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            maxLength={128}
+            autoComplete="new-password"
+            style={inputStyle(!!errors.password)}
+            onFocus={(e) => { e.target.style.borderColor = "rgba(255,107,0,0.5)"; setFocused(true); }}
+            onBlur={(e) => { e.target.style.borderColor = errors.password ? "rgba(255,80,40,0.5)" : C.border; setFocused(false); }}
+          />
+          {(focused || password.length > 0) && <PasswordChecklist password={password} />}
+        </Field>
+
+        <Field label="Confirm new password" error={errors.confirmPassword}>
+          <input
+            type="password"
+            placeholder="Re-enter your new password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            maxLength={128}
+            autoComplete="new-password"
+            style={{
+              ...inputStyle(!!errors.confirmPassword),
+              borderColor: confirmPassword && confirmPassword === password && !errors.confirmPassword
+                ? "rgba(34,197,94,0.5)"
+                : errors.confirmPassword ? "rgba(255,80,40,0.5)" : C.border,
+            }}
+            onFocus={(e) => { e.target.style.borderColor = "rgba(255,107,0,0.5)"; }}
+            onBlur={(e) => {
+              e.target.style.borderColor =
+                confirmPassword && confirmPassword === password
+                  ? "rgba(34,197,94,0.5)"
+                  : errors.confirmPassword ? "rgba(255,80,40,0.5)" : C.border;
+            }}
+          />
+          {confirmPassword.length > 0 && !errors.confirmPassword && (
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
+              {confirmPassword === password ? (
+                <>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={C.green} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  <span style={{ fontSize: 12, color: C.green }}>Passwords match</span>
+                </>
+              ) : (
+                <>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={C.red} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                  <span style={{ fontSize: 12, color: C.red }}>Passwords do not match</span>
+                </>
+              )}
+            </div>
+          )}
+        </Field>
+
+        {globalError && (
+          <div style={{ padding: "12px 14px", borderRadius: 10, background: "rgba(255,80,40,0.1)", border: "1px solid rgba(255,80,40,0.25)", color: C.red, fontSize: 14, lineHeight: 1.6 }}>
+            {globalError}
+          </div>
+        )}
+
+        <PrimaryBtn loading={loading}>
+          {loading ? "Updating…" : "Update password →"}
+        </PrimaryBtn>
+      </form>
+    </motion.div>
+  );
+}
+
 /* ─── Main AuthPage ─── */
 export default function AuthPage() {
   const [params] = useSearchParams();
@@ -657,6 +873,7 @@ export default function AuthPage() {
   const planParam = params.get("plan");
   const addonsParam = params.get("addons");
   const editMode = params.get("edit") === "1"; // navbar "Edit profile"
+  const recoveryMode = params.get("recovery") === "1"; // password reset link landing
 
   // Query string that preserves plan + add-ons through the flow
   const planQuery = planParam
@@ -691,15 +908,21 @@ export default function AuthPage() {
     setStep(hasProfile ? "done" : "profile");
   };
 
-  // On mount: check existing session OR pick up OAuth redirect
+  // On mount: check existing session OR pick up OAuth / recovery redirect
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
+      // Password-reset landing — show the set-new-password form, never auto-route
+      if (recoveryMode) { setStep("recovery"); return; }
       if (!session) { setStep("auth"); return; }
       await routeSignedIn(session.user);
     });
 
-    // Catches OAuth sign-ins (Google redirect back to this page)
+    // Catches OAuth sign-ins and password-recovery redirects
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === "PASSWORD_RECOVERY" || recoveryMode) {
+        setStep("recovery");
+        return;
+      }
       if (event === "SIGNED_IN" && session) {
         await routeSignedIn(session.user);
       } else if (!session) {
@@ -809,6 +1032,14 @@ export default function AuthPage() {
                   </p>
                 </div>
                 <AuthStep defaultMode={editMode || !planParam ? "signin" : "signup"} onSuccess={handleAuthSuccess} redirectTo={oauthRedirectTo} />
+              </div>
+            </motion.div>
+          )}
+
+          {step === "recovery" && (
+            <motion.div key="recovery" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} transition={{ duration: 0.4, ease }}>
+              <div style={cardStyle}>
+                <SetNewPasswordStep onDone={() => setStep("done")} />
               </div>
             </motion.div>
           )}

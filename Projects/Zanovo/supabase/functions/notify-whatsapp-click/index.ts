@@ -1,3 +1,5 @@
+import { createClient } from "npm:@supabase/supabase-js@2";
+
 const corsHeaders = (origin: string | null) => {
   const allowedOrigins = (Deno.env.get("ALLOWED_ORIGINS") || "")
     .split(",")
@@ -14,6 +16,18 @@ const corsHeaders = (origin: string | null) => {
   };
 };
 
+const sha256 = async (value: string) => {
+  const bytes = new TextEncoder().encode(value);
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+};
+
+const clientIp = (req: Request) =>
+  req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+  req.headers.get("cf-connecting-ip") ||
+  req.headers.get("x-real-ip") ||
+  "unknown";
+
 Deno.serve(async (req) => {
   const origin = req.headers.get("origin");
 
@@ -23,6 +37,33 @@ Deno.serve(async (req) => {
 
   if (req.method !== "POST") {
     return new Response(null, { status: 405, headers: corsHeaders(origin) });
+  }
+
+  // Rate limit by IP — blocks a bot spamming this endpoint to flood WhatsApp.
+  // Reuses the same Postgres RPC as the contact form. Fails open if not configured.
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const rateLimitSalt = Deno.env.get("RATE_LIMIT_SALT");
+  if (supabaseUrl && serviceRoleKey && rateLimitSalt) {
+    try {
+      const supabase = createClient(supabaseUrl, serviceRoleKey, {
+        auth: { persistSession: false, autoRefreshToken: false },
+      });
+      const identifierHash = await sha256(`${rateLimitSalt}:whatsapp-click:${clientIp(req)}`);
+      const { data: allowed } = await supabase.rpc("check_lead_rate_limit", {
+        p_identifier_hash: identifierHash,
+        p_max_requests: 10,
+        p_window_seconds: 3600,
+      });
+      if (allowed === false) {
+        return new Response(JSON.stringify({ ok: true, throttled: true }), {
+          status: 200,
+          headers: { ...corsHeaders(origin), "Content-Type": "application/json" },
+        });
+      }
+    } catch (err) {
+      console.warn("WhatsApp-click rate-limit check failed (allowing):", err instanceof Error ? err.message : err);
+    }
   }
 
   const phone = Deno.env.get("CALLMEBOT_PHONE");

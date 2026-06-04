@@ -287,6 +287,21 @@ const sendLeadConfirmationEmail = async (lead: Lead) => {
 
 // ── WhatsApp alert to Thabiso with one-tap reply link ────────────────────────
 
+// System alert (distinct from the lead notification) — fires when something
+// breaks, e.g. email delivery fails. Uses CallMeBot so it survives SMTP outages.
+const notifyAdminAlert = async (context: string, detail: string) => {
+  const phone = Deno.env.get("CALLMEBOT_PHONE");
+  const apiKey = Deno.env.get("CALLMEBOT_APIKEY");
+  if (!phone || !apiKey) return;
+  const text = `🚨 Zanovo system alert\n\n${context}\n${detail}`.slice(0, 900);
+  try {
+    const params = new URLSearchParams({ phone, text, apikey: apiKey });
+    await fetch(`https://api.callmebot.com/whatsapp.php?${params}`);
+  } catch (_) {
+    // never throw from the alerter
+  }
+};
+
 const sendCallMeBotNewLead = async (lead: Lead) => {
   const phone = Deno.env.get("CALLMEBOT_PHONE");
   const apiKey = Deno.env.get("CALLMEBOT_APIKEY");
@@ -422,6 +437,11 @@ Deno.serve(async (req) => {
   if (alertResult.status === "rejected") {
     const err = alertResult.reason;
     console.error("Lead alert email failed:", err instanceof Error ? err.message : err);
+    // Tell the owner email is broken (the lead WhatsApp may still have gone out)
+    await notifyAdminAlert(
+      "Lead alert EMAIL failed to send (SMTP issue).",
+      `Lead saved: ${lead.business} · ${lead.email}. Error: ${err instanceof Error ? err.message : String(err)}`,
+    );
     return json({
       error: "Submission saved, but notification failed.",
       detail: publicErrorMessage(err),

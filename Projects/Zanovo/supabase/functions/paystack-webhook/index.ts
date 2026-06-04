@@ -2,6 +2,22 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
+// Sends a WhatsApp alert to the site owner when something breaks.
+// Uses CallMeBot (independent of SMTP, so it survives email outages).
+// Never throws — alerting must not break the main flow.
+async function notifyAdminAlert(context: string, detail: string): Promise<void> {
+  const phone = Deno.env.get("CALLMEBOT_PHONE");
+  const apiKey = Deno.env.get("CALLMEBOT_APIKEY");
+  if (!phone || !apiKey) return;
+  const text = `🚨 Zanovo system alert\n\n${context}\n${detail}`.slice(0, 900);
+  try {
+    const params = new URLSearchParams({ phone, text, apikey: apiKey });
+    await fetch(`https://api.callmebot.com/whatsapp.php?${params}`);
+  } catch (_) {
+    // swallow — the alerter must never throw
+  }
+}
+
 async function verifySignature(
   rawBody: string,
   signature: string,
@@ -94,6 +110,11 @@ Deno.serve(async (req) => {
     if (error) {
       // Log but still return 200 — we don't want Paystack to flood us with retries
       console.error("Supabase upsert error:", JSON.stringify(error));
+      // CRITICAL: money was received but not recorded — alert immediately
+      await notifyAdminAlert(
+        "Payment received but NOT recorded in database.",
+        `Ref: ${data.reference} · ${planName ?? "?"} · R${(data.amount / 100).toFixed(2)} · ${data.customer?.email ?? "?"}`,
+      );
     } else {
       console.log(`Transaction recorded: ${data.reference} · ${planName} · ${data.amount / 100} ZAR`);
     }
@@ -105,6 +126,10 @@ Deno.serve(async (req) => {
 
   } catch (err) {
     console.error("Unhandled webhook error:", err);
+    await notifyAdminAlert(
+      "Paystack webhook crashed (unhandled error).",
+      err instanceof Error ? err.message : String(err),
+    );
     return new Response("Internal error", { status: 500 });
   }
 });
