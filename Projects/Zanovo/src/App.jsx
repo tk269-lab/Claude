@@ -729,9 +729,9 @@ function Hero() {
         fontSize: "clamp(16px, 2vw, 20px)", color: C.muted,
         maxWidth: 600, lineHeight: 1.75, marginBottom: 40,
       }}>
-        We design, build, and manage digital systems for small businesses —
-        helping them attract better clients, operate more efficiently, and grow with confidence,
-        backed by AI-powered web design, automation, and a team invested in your outcomes.
+        We design, build, and manage digital systems for businesses of all sizes.
+        We help them attract better clients, operate more efficiently, and grow with confidence,
+        backed by web design, AI automation, and a team invested in your outcomes.
       </motion.p>
 
       {/* CTAs */}
