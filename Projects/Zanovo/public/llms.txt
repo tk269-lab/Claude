@@ -2,22 +2,142 @@
 
 > Cape Town web design and AI systems agency. We help small businesses capture leads, close clients, and operate 24/7 — even after hours.
 
-Zanovo builds custom websites and AI-powered systems for small businesses in Cape Town, South Africa. Our focus is on helping businesses get found online, capture more leads, and close clients automatically — even outside business hours.
+Zanovo is a South African digital agency founded in 2025 and based in Cape Town, Western Cape. We specialise in custom website design and AI-powered lead generation and automation systems for small businesses across South Africa. Our focus is on measurable outcomes: more enquiries, more clients, and business systems that work around the clock without manual effort.
+
+Founder: Thabiso Molekwa — web design and AI automation specialist.
+Contact: thabiso@zanovo.co.za
+Phone: +27 630 279 893
+Instagram: https://www.instagram.com/zanovo_systems
+Location: Cape Town, Western Cape, South Africa
+Area served: South Africa (nationwide, all work done remotely)
+
+---
 
 ## Services
 
-- [Web Design & Development](https://zanovo.co.za/): Custom, fast-loading websites built for local SEO and lead generation.
-- [AI Lead Generation Systems](https://zanovo.co.za/): Automated systems that capture enquiries from web, WhatsApp, and social media 24/7.
-- [AI Automation](https://zanovo.co.za/): Custom AI workflows for client onboarding, follow-up, CRM integration, and appointment booking.
+### 1. Web Design & Development
+We design and build custom, fast-loading websites optimised for local SEO and lead generation. Every Zanovo website is built for conversions — turning visitors into enquiries and enquiries into paying clients. Sites are mobile-first, performance-optimised, and structured to rank on Google for local searches.
 
-## About
+What's included:
+- Custom design tailored to your brand and target market
+- Mobile-first, responsive layout
+- Local SEO setup (Google Business Profile, schema markup, meta tags)
+- Contact form with lead capture and email notifications
+- WhatsApp chat integration
+- Google Analytics setup
+- Fast load speeds (optimised images, modern build tools)
+- SSL and hosting guidance
 
-- Location: Cape Town, Western Cape, South Africa
-- Founded: 2025
-- Contact: thabiso@zanovo.co.za
-- Instagram: https://www.instagram.com/zanovo_systems
+### 2. AI Lead Generation Systems
+We build automated lead capture systems that work 24/7 — capturing enquiries from your website, WhatsApp, and social media even outside business hours. When a potential client reaches out at 11pm, the system responds instantly, captures their details, and notifies you — so no lead is ever lost.
+
+What's included:
+- AI-powered chat on your website (responds to common questions, captures contact details)
+- WhatsApp automation (responds to enquiries after hours)
+- Lead capture from web forms, social media DMs, and chat
+- CRM integration (stores and organises leads automatically)
+- Instant email or WhatsApp notifications to the business owner when a new lead comes in
+- Follow-up sequences to nurture leads until they are ready to buy
+
+### 3. AI Automation
+Custom AI workflow automation for small businesses — covering everything from client onboarding and follow-up to CRM management and appointment booking. We map your current manual processes and replace them with automated systems, freeing you to focus on delivery rather than admin.
+
+What's included:
+- Client onboarding automation (welcome emails, intake forms, document collection)
+- Appointment booking systems (calendar integration, reminders, confirmations)
+- Follow-up sequences for enquiries and quotes
+- CRM integration and data entry automation
+- WhatsApp automation for client communication
+- Review request automation after service delivery
+
+---
+
+## Pricing
+
+All pricing is in South African Rand (ZAR). Setup fees are once-off. Monthly fees cover hosting, maintenance, AI system operation, and ongoing support.
+
+### Starter Pack
+- Setup fee: R4,500 (once-off)
+- Monthly fee: R2,500/month
+- Best for: Small businesses that need a professional web presence and basic lead capture
+- Includes: Custom website (up to 5 sections), contact form with lead notifications, WhatsApp chat button, basic local SEO setup, Google Analytics
+
+### Growth Pack
+- Setup fee: R9,500 (once-off)
+- Monthly fee: R5,500/month
+- Best for: Businesses ready to scale lead generation and automate client communication
+- Includes: Everything in Starter, plus AI chatbot on website, WhatsApp automation, CRM integration, lead follow-up sequences, monthly performance report
+
+### Growth Max Pack
+- Setup fee: R18,000 (once-off)
+- Monthly fee: R9,500/month
+- Best for: Established businesses that want a fully automated client acquisition and onboarding system
+- Includes: Everything in Growth, plus full AI automation build (onboarding, follow-up, appointment booking), advanced CRM setup, WhatsApp broadcast system, priority support
+
+### Optional Add-Ons (once-off fees)
+- Professional photography: custom quote
+- Copywriting: custom quote
+- Logo design: custom quote
+- Social media profile setup: custom quote
+
+Payment methods: EFT, Credit Card (via Paystack). All prices include VAT where applicable.
+
+---
+
+## Process
+
+We follow a structured 4-step process for every project:
+
+1. **Discovery Call** — Free 30-minute consultation to understand your business, goals, and current challenges. No commitment required.
+2. **Strategy & Proposal** — We map out a custom solution and send a detailed proposal with scope, timeline, and pricing.
+3. **Build** — We design and build your website and/or AI systems. Standard websites take 1–3 weeks. AI systems take 2–4 weeks. You receive regular updates throughout.
+4. **Launch & Support** — We launch your site and systems, train you on how to use them, and provide ongoing support and maintenance.
+
+---
+
+## Frequently Asked Questions
+
+**What services does Zanovo offer?**
+Zanovo offers web design and development, AI lead generation systems, and AI automation for small businesses across South Africa. Our services include custom websites, automated lead capture, AI chatbots, and 24/7 client communication systems.
+
+**How does AI automation help small businesses?**
+AI automation helps small businesses capture leads and respond to enquiries automatically — even after hours. Zanovo builds custom AI systems that handle web chat, WhatsApp, and form enquiries so you never miss a potential client, even when you are not available.
+
+**Does Zanovo work with small businesses across South Africa?**
+Yes. Zanovo is a South Africa-based digital agency that specialises in helping small businesses get found online and convert leads into paying clients. We work with businesses across South Africa — from Johannesburg and Durban to Cape Town and beyond. All strategy calls, planning sessions, and ongoing support are conducted remotely.
+
+**How long does it take to build a website with Zanovo?**
+A standard business website typically takes 1 to 3 weeks depending on complexity. AI-powered lead generation systems are built and launched within 2 to 4 weeks. We move fast without cutting corners on quality.
+
+**How much does a website or AI system from Zanovo cost?**
+Pricing depends on your specific requirements. Our Starter Pack starts at R4,500 setup + R2,500/month. Our Growth Pack is R9,500 setup + R5,500/month. Our Growth Max Pack is R18,000 setup + R9,500/month. We offer a free consultation to assess your needs and find the right fit.
+
+**What types of businesses does Zanovo work with?**
+We work with small and medium-sized businesses across all industries — restaurants, salons, contractors, consultants, health professionals, retailers, and more. If you rely on enquiries and clients to run your business, we can help you capture and convert more of them.
+
+**Is there a contract or minimum term?**
+Monthly packages are billed month-to-month with 30 days' notice to cancel. There are no long-term lock-in contracts.
+
+**What happens if I want to cancel?**
+We offer a clear refund and cancellation policy. Setup fees are non-refundable once work has begun. Monthly fees can be cancelled with 30 days' notice. See our refund policy at https://zanovo.co.za/refund for full details.
+
+**Does Zanovo offer free consultations?**
+Yes. We offer a free 30-minute discovery call to understand your business and recommend the right solution. You can book via the contact form on the website at https://zanovo.co.za or by WhatsApp.
+
+---
+
+## Why Zanovo
+
+- **Local expertise**: We understand the South African market — local search behaviour, payment preferences (EFT, credit card), WhatsApp-first communication culture, and load-shedding resilience.
+- **Results-focused**: We do not just build websites. We build systems designed to generate leads and clients. Every feature we include has a reason.
+- **Fast delivery**: Most websites are live within 2 weeks. No endless back-and-forth.
+- **Transparent pricing**: Fixed setup fees, predictable monthly costs, no hidden charges.
+- **Small business friendly**: We work with businesses at all stages, from brand-new startups to established SMEs.
+
+---
 
 ## Key Pages
 
 - [Homepage](https://zanovo.co.za/)
 - [Privacy Policy](https://zanovo.co.za/privacy)
+- [Refund & Cancellation Policy](https://zanovo.co.za/refund)
