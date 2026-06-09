@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from "react";
 import { motion, useInView, AnimatePresence } from "framer-motion";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { nationalToE164, PHONE_COUNTRY_OPTIONS, validateNationalPhone } from "./lib/phoneIntl";
 import { WHATSAPP_CHAT_URL } from "./constants/contact";
 import { supabase } from "./lib/supabase";
@@ -443,7 +443,7 @@ function AccountWidget({
   );
 }
 
-function Navbar() {
+export function Navbar() {
   const [open, setOpen] = useState(false);         // mobile menu
   const [dropdownOpen, setDropdownOpen] = useState(false); // account dropdown
   const [authUser, setAuthUser] = useState(null);
@@ -451,10 +451,18 @@ function Navbar() {
   const dropdownRef = useRef(null);
   const isMobile = useIsMobile(700);
   const navigate = useNavigate();
+  const location = useLocation();
 
+  // Smart nav: Pricing is its own page; other links scroll on the homepage,
+  // or route home + anchor when clicked from another page.
   const scrollTo = (id) => {
-    document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
     setOpen(false);
+    if (id === "pricing") { navigate("/pricing"); return; }
+    if (location.pathname !== "/") {
+      navigate(`/#${id}`);
+    } else {
+      document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+    }
   };
 
   /* Load auth state + profile */
@@ -1009,7 +1017,7 @@ const plans = [
   {
     slug: "starter",
     name: "Starter Pack",
-    setup: "R4,500",
+    setup: "R6,500",
     price: "R2,500",
     tag: null,
     description: "The essential digital foundation — a professional web presence and structured lead capture — for businesses ready to grow with intention.",
@@ -1045,7 +1053,7 @@ const plans = [
   {
     slug: "growth-max",
     name: "Growth Max Pack",
-    setup: "R18,000",
+    setup: "R25,000",
     price: "R9,500",
     tag: null,
     description: "Our most comprehensive engagement. For businesses committed to sustained growth, with dedicated strategy, advanced systems, and a true long-term partnership.",
@@ -1244,21 +1252,22 @@ function AddOnsModal({ plan, onClose }) {
   );
 }
 
-function PricingSection() {
+export function PricingSection() {
   const isMobile = useIsMobile();
   const [modalPlan, setModalPlan] = useState(null);
   return (
     <section id="pricing" style={{ padding: "100px 24px", maxWidth: 1100, margin: "0 auto" }}>
       <Reveal style={{ marginBottom: 56, textAlign: "center" }}>
         <p style={{ fontSize: 12, fontWeight: 600, color: C.accent, textTransform: "uppercase", letterSpacing: "0.18em", marginBottom: 20 }}>
-          Pricing
+          Investment
         </p>
         <h2 style={{ fontSize: "clamp(28px, 4vw, 48px)", marginBottom: 16 }}>
-          Transparent pricing. No surprises.
+          More booked jobs. Fewer missed calls. Leads that follow themselves up.
         </h2>
-        <p style={{ color: C.muted, fontSize: 17, maxWidth: 540, margin: "0 auto", lineHeight: 1.85 }}>
-          No hidden fees. No lock-in contracts. No agency jargon. Select the engagement
-          level that aligns with your current growth objectives — and scale when the time is right.
+        <p style={{ color: C.muted, fontSize: 17, maxWidth: 620, margin: "0 auto", lineHeight: 1.85 }}>
+          The real cost isn&rsquo;t the package — it&rsquo;s the leads slipping through every week:
+          missed WhatsApps, unanswered enquiries, reviews you never asked for.
+          Zanovo plugs the gaps. Cancel anytime. Keep your domain. Own your data.
         </p>
       </Reveal>
 
@@ -1389,7 +1398,7 @@ function PricingSection() {
 
       <Reveal delay={0.3}>
         <p style={{ textAlign: "center", color: C.muted, fontSize: 14, marginTop: 28, lineHeight: 1.7 }}>
-          Not sure which plan fits your business? Book a free strategy call — we'll give you an honest recommendation, even if it means a smaller package.
+          If the set packages do not work for your business, we can build a custom package around exactly what you need. Book a free strategy call — the recommendation is always honest, even if it means a smaller package.
         </p>
       </Reveal>
 
@@ -1398,6 +1407,170 @@ function PricingSection() {
           <AddOnsModal plan={modalPlan} onClose={() => setModalPlan(null)} />
         )}
       </AnimatePresence>
+    </section>
+  );
+}
+
+/* ─── Zanovo Care: ongoing management plans ─── */
+const carePlans = [
+  {
+    slug: "care-essential",
+    name: "Essential Care",
+    price: "R750",
+    tag: null,
+    description: "Keep your website secure, backed up, and online — the essentials, handled for you.",
+    features: [
+      "Managed hosting & SSL certificate",
+      "Weekly automated backups",
+      "Security & uptime monitoring",
+      "Monthly software updates",
+      "Up to 1 hour of content edits / month",
+      "Email support",
+    ],
+    featured: false,
+  },
+  {
+    slug: "care-pro",
+    name: "Pro Care",
+    price: "R1,500",
+    tag: "Most Popular",
+    description: "Everything kept current, plus priority help and a monthly health check on your site.",
+    features: [
+      "Everything in Essential Care",
+      "Up to 3 hours of edits / month",
+      "Priority support",
+      "Monthly performance report",
+      "Plugin & dependency updates",
+      "Basic SEO monitoring",
+    ],
+    featured: true,
+  },
+  {
+    slug: "care-premium",
+    name: "Premium Care",
+    price: "R2,500",
+    tag: null,
+    description: "Hands-off peace of mind, with ongoing strategy built into your retainer.",
+    features: [
+      "Everything in Pro Care",
+      "Unlimited small edits (fair use)",
+      "Lead & conversion monitoring",
+      "Quarterly strategy review",
+      "Priority turnaround",
+      "WhatsApp support line",
+    ],
+    featured: false,
+  },
+];
+
+export function CareSection() {
+  const isMobile = useIsMobile();
+  const navigate = useNavigate();
+  return (
+    <section id="care" style={{ padding: isMobile ? "40px 24px 90px" : "40px 24px 110px", maxWidth: 1100, margin: "0 auto" }}>
+      <Reveal style={{ marginBottom: 48, textAlign: "center" }}>
+        <p style={{ fontSize: 12, fontWeight: 600, color: C.accent, textTransform: "uppercase", letterSpacing: "0.18em", marginBottom: 20 }}>
+          Zanovo Care
+        </p>
+        <h2 style={{ fontSize: "clamp(26px, 4vw, 42px)", marginBottom: 16 }}>
+          Keep it running at its best.
+        </h2>
+        <p style={{ color: C.muted, fontSize: 17, maxWidth: 560, margin: "0 auto", lineHeight: 1.85 }}>
+          A live website is not a "set and forget" asset. Our ongoing care plans keep your
+          site fast, secure, and up to date — so it keeps working long after launch. Month-to-month, cancel anytime.
+        </p>
+      </Reveal>
+
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: 16, alignItems: "start" }}>
+        {carePlans.map(({ slug, name, price, tag, description, features, featured }, i) => (
+          <Reveal key={name} delay={i * 0.1}>
+            <motion.div
+              whileHover={{ translateY: -4 }}
+              transition={{ duration: 0.2 }}
+              style={{
+                borderRadius: 20, overflow: "hidden",
+                background: featured
+                  ? `linear-gradient(160deg, rgba(255,107,0,0.12) 0%, rgba(255,107,0,0.04) 100%)`
+                  : C.glass,
+                border: featured ? "1px solid rgba(255,107,0,0.35)" : `1px solid ${C.border}`,
+                backdropFilter: "blur(16px)",
+                position: "relative",
+              }}
+            >
+              {tag && (
+                <div style={{
+                  background: `linear-gradient(135deg, ${C.accent}, ${C.accentLt})`,
+                  padding: "8px 0", textAlign: "center",
+                  fontSize: 12, fontWeight: 700, fontFamily: "system-ui, sans-serif",
+                  color: "#fff", letterSpacing: "0.06em", textTransform: "uppercase",
+                }}>
+                  {tag}
+                </div>
+              )}
+
+              <div style={{ padding: "32px 28px" }}>
+                <h3 style={{ fontSize: 19, marginBottom: 16, fontFamily: "system-ui, sans-serif", color: featured ? C.accent : C.text }}>
+                  {name}
+                </h3>
+
+                <div style={{ marginBottom: 18 }}>
+                  <span style={{ fontSize: 32, fontWeight: 700, fontFamily: "system-ui, sans-serif", color: featured ? C.accent : C.text, letterSpacing: "-0.02em" }}>
+                    {price}
+                  </span>
+                  <span style={{ fontSize: 13, color: C.muted, marginLeft: 4 }}>/ month</span>
+                </div>
+
+                <p style={{ color: C.muted, fontSize: 13, lineHeight: 1.65, marginBottom: 24 }}>
+                  {description}
+                </p>
+
+                <div style={{ height: 1, background: C.border, marginBottom: 20 }} />
+
+                <div style={{ display: "flex", flexDirection: "column", gap: 11, marginBottom: 28 }}>
+                  {features.map((f) => (
+                    <div key={f} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                      <span style={{ color: featured ? C.accent : C.green, flexShrink: 0, marginTop: 1 }}>
+                        {Icon.check}
+                      </span>
+                      <span style={{ fontSize: 13, color: C.muted, lineHeight: 1.5 }}>{f}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {featured ? (
+                  <BtnPrimary
+                    onClick={() => navigate("/#contact")}
+                    style={{ width: "100%", justifyContent: "center" }}
+                  >
+                    Get Started {Icon.arrow}
+                  </BtnPrimary>
+                ) : (
+                  <motion.button
+                    onClick={() => navigate("/#contact")}
+                    whileHover={{ borderColor: "rgba(255,255,255,0.25)" }}
+                    style={{
+                      width: "100%", padding: "13px", borderRadius: 10,
+                      background: "transparent", color: C.text,
+                      fontWeight: 600, fontSize: 14, fontFamily: "system-ui, sans-serif",
+                      border: `1px solid ${C.border}`, cursor: "pointer",
+                      transition: "border-color 0.2s",
+                    }}
+                  >
+                    Get Started
+                  </motion.button>
+                )}
+              </div>
+            </motion.div>
+          </Reveal>
+        ))}
+      </div>
+
+      <Reveal delay={0.3}>
+        <p style={{ textAlign: "center", color: C.muted, fontSize: 14, marginTop: 28, lineHeight: 1.7 }}>
+          Care plans are tailored on a quick call to match your site and how hands-on you want to be.
+          Already a Zanovo client? Care can be added to your build at any time.
+        </p>
+      </Reveal>
     </section>
   );
 }
@@ -1738,7 +1911,7 @@ function ContactSection() {
 }
 
 /* ─── Footer ─── */
-function Footer() {
+export function Footer() {
   const linkBtn = {
     display: "inline-flex",
     alignItems: "center",
@@ -1790,6 +1963,20 @@ function Footer() {
 
 /* ─── App ─── */
 export default function App() {
+  const location = useLocation();
+
+  // When arriving with a hash (e.g. /#contact from another page), scroll to it
+  useEffect(() => {
+    if (location.hash) {
+      const id = location.hash.slice(1);
+      // small delay so the target section has mounted
+      const t = setTimeout(() => {
+        document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+      }, 80);
+      return () => clearTimeout(t);
+    }
+  }, [location.hash]);
+
   return (
     <div style={{ background: C.bg, minHeight: "100svh" }}>
       <Navbar />
@@ -1798,7 +1985,6 @@ export default function App() {
         <PainSection />
         <ServicesSection />
         <ProcessSection />
-        <PricingSection />
         <ContactSection />
       </main>
       <Footer />

@@ -45,3 +45,4 @@ analytics-reports/
 
 # mac
 .DS_Store
+outputs/.leadgen.env

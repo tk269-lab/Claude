@@ -32,8 +32,8 @@ const PLANS = {
     slug: "starter",
     name: "Starter Pack",
     tag: "Foundation",
-    setupDisplay: "R4,500",
-    setupCents: 450000,
+    setupDisplay: "R6,500",
+    setupCents: 650000,
     monthlyDisplay: "R2,500",
     features: [
       "5-page mobile-optimised website",
@@ -64,8 +64,8 @@ const PLANS = {
     slug: "growth-max",
     name: "Growth Max Pack",
     tag: "Full Partnership",
-    setupDisplay: "R18,000",
-    setupCents: 1800000,
+    setupDisplay: "R25,000",
+    setupCents: 2500000,
     monthlyDisplay: "R9,500",
     features: [
       "Everything in Growth",
@@ -509,6 +509,15 @@ export default function CheckoutPage() {
               Nothing happens without your input and approval. You are in full control of the direction.
             </p>
           </div>
+
+          {/* Custom package note */}
+          <p style={{ fontSize: 13, color: C.muted, lineHeight: 1.7, marginTop: 16, textAlign: "center" }}>
+            If this package does not quite fit, we can build a custom one around exactly what your business needs.{" "}
+            <a href="/#contact" style={{ color: C.accent, textDecoration: "none", fontWeight: 600 }}>
+              Book a free strategy call
+            </a>{" "}
+            and we will put it together with you.
+          </p>
         </div>
 
         {/* ── Right: Payment panel ── */}

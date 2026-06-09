@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect } from "react";
 import { Route, Routes } from "react-router-dom";
 import App from "./App.jsx";
+import PricingPage from "./PricingPage.jsx";
 import CookieConsent from "./CookieConsent.jsx";
 import { initAnalytics } from "./lib/analytics.js";
 
@@ -17,6 +18,7 @@ export default function AppRoutes() {
     <>
     <Routes>
       <Route path="/" element={<App />} />
+      <Route path="/pricing" element={<PricingPage />} />
       <Route
         path="/privacy"
         element={(
