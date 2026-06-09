@@ -1,0 +1,35 @@
+# ── Secrets / environment ──────────────────────────────────
+.env
+.env.*
+!.env.example          # keep the no-secrets template committable (root + nested)
+!**/.env.example
+**/.env.production.local
+**/outputs/.leadgen.env
+
+# Vercel (project links + pulled production secrets)
+.vercel/
+**/.vercel/
+
+# ── OS / editor junk ───────────────────────────────────────
+.DS_Store
+**/.DS_Store
+Thumbs.db
+*.swp
+
+# ── Dependencies / build output ────────────────────────────
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+build/
+**/build/
+*.log
+
+# ── Supabase local temp ────────────────────────────────────
+**/supabase/.temp/
+
+# ── Large non-code asset / media folders (not source) ──────
+Zanovo analytics/
+Zanovo branding kit copy/
+Projects/my-videos/
+Projects/zanovo-video/
