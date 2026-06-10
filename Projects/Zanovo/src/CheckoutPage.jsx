@@ -740,6 +740,10 @@ export default function CheckoutPage() {
 
                 <p style={{ fontSize: 12, color: C.muted, textAlign: "center", lineHeight: 1.6, margin: 0 }}>
                   By proceeding you agree to our{" "}
+                  <Link to="/terms" target="_blank" rel="noopener noreferrer" style={{ color: C.accent, textDecoration: "none", fontWeight: 600 }}>
+                    Terms of Service
+                  </Link>
+                  {" "}and{" "}
                   <Link to="/refund" target="_blank" rel="noopener noreferrer" style={{ color: C.accent, textDecoration: "none", fontWeight: 600 }}>
                     Refund &amp; Cancellation Policy
                   </Link>
@@ -807,6 +811,10 @@ export default function CheckoutPage() {
 
                 <p style={{ fontSize: 12, color: C.muted, textAlign: "center", lineHeight: 1.6, margin: 0 }}>
                   By proceeding you agree to our{" "}
+                  <Link to="/terms" target="_blank" rel="noopener noreferrer" style={{ color: C.accent, textDecoration: "none", fontWeight: 600 }}>
+                    Terms of Service
+                  </Link>
+                  {" "}and{" "}
                   <Link to="/refund" target="_blank" rel="noopener noreferrer" style={{ color: C.accent, textDecoration: "none", fontWeight: 600 }}>
                     Refund &amp; Cancellation Policy
                   </Link>

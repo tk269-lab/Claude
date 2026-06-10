@@ -8,6 +8,7 @@ import { initAnalytics } from "./lib/analytics.js";
 const PrivacyPolicyPage = lazy(() => import("./PrivacyPolicyPage.jsx"));
 const CheckoutPage = lazy(() => import("./CheckoutPage.jsx"));
 const RefundPolicyPage = lazy(() => import("./RefundPolicyPage.jsx"));
+const TermsPage = lazy(() => import("./TermsPage.jsx"));
 const AuthPage = lazy(() => import("./AuthPage.jsx"));
 
 export default function AppRoutes() {
@@ -40,6 +41,14 @@ export default function AppRoutes() {
         element={(
           <Suspense fallback={null}>
             <RefundPolicyPage />
+          </Suspense>
+        )}
+      />
+      <Route
+        path="/terms"
+        element={(
+          <Suspense fallback={null}>
+            <TermsPage />
           </Suspense>
         )}
       />

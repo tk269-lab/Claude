@@ -535,6 +535,20 @@ function AuthStep({ defaultMode = "signup", onSuccess, redirectTo }) {
           {loading ? "Please wait…" : mode === "signup" ? "Create account →" : "Sign in →"}
         </PrimaryBtn>
 
+        {mode === "signup" && (
+          <p style={{ fontSize: 12, color: C.muted, textAlign: "center", lineHeight: 1.6, margin: 0 }}>
+            By creating an account you agree to our{" "}
+            <Link to="/terms" target="_blank" rel="noopener noreferrer" style={{ color: C.accent, textDecoration: "none", fontWeight: 600 }}>
+              Terms of Service
+            </Link>{" "}
+            and{" "}
+            <Link to="/privacy" target="_blank" rel="noopener noreferrer" style={{ color: C.accent, textDecoration: "none", fontWeight: 600 }}>
+              Privacy Policy
+            </Link>
+            .
+          </p>
+        )}
+
         {mode === "signin" && (
           <p style={{ fontSize: 13, color: C.muted, textAlign: "center", margin: 0 }}>
             Don't have an account?{" "}

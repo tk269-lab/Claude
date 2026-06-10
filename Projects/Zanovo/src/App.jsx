@@ -1935,23 +1935,30 @@ export function Footer() {
       flexWrap: "wrap", gap: 16, maxWidth: 1100, margin: "0 auto",
     }}>
       <Logo size={20} />
-      <div style={{ display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
-        <Link
-          to="/privacy"
-          style={linkBtn}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = "rgba(255,107,0,0.45)";
-            e.currentTarget.style.background = "rgba(255,107,0,0.08)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = C.border;
-            e.currentTarget.style.background = "rgba(255,255,255,0.06)";
-          }}
-        >
-          Privacy policy
-        </Link>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+        {[
+          { to: "/terms", label: "Terms of service" },
+          { to: "/privacy", label: "Privacy policy" },
+          { to: "/refund", label: "Refund policy" },
+        ].map(({ to, label }) => (
+          <Link
+            key={to}
+            to={to}
+            style={linkBtn}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = "rgba(255,107,0,0.45)";
+              e.currentTarget.style.background = "rgba(255,107,0,0.08)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = C.border;
+              e.currentTarget.style.background = "rgba(255,255,255,0.06)";
+            }}
+          >
+            {label}
+          </Link>
+        ))}
         <p style={{ color: C.muted, fontSize: 13, margin: 0 }}>
-          © {new Date().getFullYear()} Zanovo. All rights reserved.
+          © {new Date().getFullYear()} Zanovo (Pty) Ltd. All rights reserved.
         </p>
       </div>
       <p style={{ color: C.muted, fontSize: 13, margin: 0 }}>
