@@ -1,5 +1,4 @@
 {
-  "crons": [{ "path": "/api/site-health-check", "schedule": "*/5 * * * *" }],
   "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
   "headers": [
     {
