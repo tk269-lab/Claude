@@ -11,5 +11,5 @@ jobs:
     steps:
       - name: Call health check endpoint
         run: |
-          curl -sfL -X GET "https://zanovo.co.za/api/site-health-check" \
+          curl -sf -X GET "https://www.zanovo.co.za/api/site-health-check" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
