@@ -2,6 +2,12 @@
 
 Zanovo sells AI-powered systems (websites, lead capture, automation) to South African small businesses. This repo is the live marketing site at **www.zanovo.co.za** plus the social content pipeline. Owner: TK (Thabiso Molekwa).
 
+## Project context — read first
+
+`context.md` (repo root) holds consolidated context for TK's active projects: **Zanovo** (marketing site, Dashboard, Automation), **Runway**, **Happenin**, **South Central**, **Overflow Church**, and **Rync** — decisions, architecture/pricing facts, action items, and open questions per project.
+
+Before answering, work out which project the request is about and **read the matching section of `context.md`** so responses reflect that project's real state. If the message doesn't make it clear which project applies, **ask TK which project to draw context from** before proceeding — don't guess. (Several of these live in separate repos; see "Related projects" below — this pointer is for context only and does not change the rule against mixing their code into this repo.)
+
 ## What lives where
 
 - `src/` — React 19 + Vite SPA (react-router). Pages: pricing, checkout, auth, policies. `src/_archive/` is dead code, do not extend it.
