@@ -6,6 +6,7 @@ import { WHATSAPP_CHAT_URL } from "./constants/contact";
 import { supabase } from "./lib/supabase";
 import { getSupabaseFunctionHeaders } from "./lib/supabaseFunctions";
 import { ADD_ONS, formatRand } from "./lib/addons";
+import { PLANS as plans } from "./lib/plans";
 import { trackEvent } from "./lib/analytics";
 
 /* ─── Design tokens ─── */
@@ -1013,62 +1014,8 @@ function ProcessSection() {
 }
 
 /* ─── Pricing ─── */
-const plans = [
-  {
-    slug: "starter",
-    name: "Starter Pack",
-    setup: "R6,500",
-    price: "R2,500",
-    tag: null,
-    description: "The essential digital foundation — a professional web presence and structured lead capture — for businesses ready to grow with intention.",
-    features: [
-      "5-page mobile-optimised website",
-      "Lead capture & enquiry management",
-      "Google Business Profile setup",
-      "Automated review requests (Email & WhatsApp)",
-      "Monthly performance report",
-    ],
-    cta: "Get Started",
-    featured: false,
-  },
-  {
-    slug: "growth",
-    name: "Growth Pack",
-    setup: "R9,500",
-    price: "R5,500",
-    tag: "Most Popular",
-    description: "A complete client acquisition system — web presence, lead capture, and automated follow-up — working together to generate consistent, measurable growth.",
-    features: [
-      "Everything in Starter",
-      "AI webchat",
-      "AI chatbot with lead qualification",
-      "Automated follow-ups (Email & WhatsApp)",
-      "Missed-call text-back",
-      "CRM integration & lead dashboard",
-      "Reputation management",
-    ],
-    cta: "Get Started",
-    featured: true,
-  },
-  {
-    slug: "growth-max",
-    name: "Growth Max Pack",
-    setup: "R25,000",
-    price: "R9,500",
-    tag: null,
-    description: "Our most comprehensive engagement. For businesses committed to sustained growth, with dedicated strategy, advanced systems, and a true long-term partnership.",
-    features: [
-      "Everything in Growth",
-      "AI SMS nurture sequences",
-      "Custom landing pages & funnels",
-      "Advanced booking & intake automation",
-      "Priority support",
-      "Monthly strategy call",
-    ],
-    cta: "Get Started",
-    featured: false,
-  },
-];
+/* Plan data lives in src/lib/plans.js — shared with CheckoutPage so the
+   displayed price and the charged price can never drift apart. */
 
 /* ─── Add-ons modal ─── */
 function AddOnsModal({ plan, onClose }) {
@@ -1082,7 +1029,7 @@ function AddOnsModal({ plan, onClose }) {
     return () => { document.body.style.overflow = ""; };
   }, []);
 
-  const setupCents = parseInt(plan.setup.replace(/[^\d]/g, ""), 10) * 100;
+  const setupCents = plan.setupCents;
   const addonsCents = selected.reduce((sum, id) => {
     const a = ADD_ONS.find((x) => x.id === id);
     return sum + (a ? a.cents : 0);
@@ -1272,7 +1219,7 @@ export function PricingSection() {
       </Reveal>
 
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: 16, alignItems: "start" }}>
-        {plans.map(({ slug, name, setup, price, tag, description, features, cta, featured }, i) => (
+        {plans.map(({ slug, name, setupCents, setupDisplay, monthlyDisplay, tag, description, features, cta, featured }, i) => (
           <Reveal key={name} delay={i * 0.1}>
             <motion.div
               whileHover={{ translateY: -4 }}
@@ -1325,7 +1272,7 @@ export function PricingSection() {
                       Once-off setup
                     </div>
                     <div style={{ fontSize: 18, fontWeight: 700, fontFamily: "system-ui, sans-serif", color: C.text, letterSpacing: "-0.02em" }}>
-                      {setup}
+                      {setupDisplay}
                     </div>
                   </div>
 
@@ -1340,7 +1287,7 @@ export function PricingSection() {
                     </div>
                     <div>
                       <span style={{ fontSize: 18, fontWeight: 700, fontFamily: "system-ui, sans-serif", color: featured ? C.accent : C.text, letterSpacing: "-0.02em" }}>
-                        {price}
+                        {monthlyDisplay}
                       </span>
                       <span style={{ fontSize: 11, color: C.muted, marginLeft: 3 }}>/mo</span>
                     </div>
@@ -1369,14 +1316,14 @@ export function PricingSection() {
                 {/* CTA */}
                 {featured ? (
                   <BtnPrimary
-                    onClick={() => { trackEvent("select_plan", { plan: slug }); setModalPlan({ slug, name, setup }); }}
+                    onClick={() => { trackEvent("select_plan", { plan: slug }); setModalPlan({ slug, name, setupCents }); }}
                     style={{ width: "100%", justifyContent: "center" }}
                   >
                     {cta} {Icon.arrow}
                   </BtnPrimary>
                 ) : (
                   <motion.button
-                    onClick={() => { trackEvent("select_plan", { plan: slug }); setModalPlan({ slug, name, setup }); }}
+                    onClick={() => { trackEvent("select_plan", { plan: slug }); setModalPlan({ slug, name, setupCents }); }}
                     whileHover={{ borderColor: "rgba(255,255,255,0.25)" }}
                     style={{
                       width: "100%", padding: "13px", borderRadius: 10,

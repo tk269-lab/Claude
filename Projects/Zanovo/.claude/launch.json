@@ -1,0 +1,49 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "zanovo-site",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "/Users/tk/Claude/Projects/Zanovo", "run", "dev", "--", "--port", "5174", "--strictPort"],
+      "port": 5174
+    },
+    {
+      "name": "happenin-app-web",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "cd /Users/tk/Claude/Projects/happenin/app && npx expo start --web --port 8081"
+      ],
+      "port": 8081
+    },
+    {
+      "name": "happenin-landing",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "/Users/tk/Claude/Projects/happenin/landing", "run", "dev"],
+      "port": 5173
+    },
+    {
+      "name": "rezident-prototype",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "4198",
+        "--directory",
+        "/Users/tk/Claude/Projects/rezident-prototype"
+      ],
+      "port": 4198
+    },
+    {
+      "name": "rezident-php",
+      "runtimeExecutable": "php",
+      "runtimeArgs": [
+        "-S",
+        "127.0.0.1:4199",
+        "-t",
+        "/Users/tk/Claude/Projects/rezident-prototype/php"
+      ],
+      "port": 4199
+    }
+  ]
+}

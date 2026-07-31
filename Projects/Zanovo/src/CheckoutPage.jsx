@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { PHONE_COUNTRY_OPTIONS, validateNationalPhone, nationalToE164 } from "./lib/phoneIntl";
 import { supabase } from "./lib/supabase";
 import { ADD_ONS, ADD_ON_MAP, formatRand, parseAddonParam } from "./lib/addons";
+import { PLAN_MAP as PLANS } from "./lib/plans";
 import { trackEvent } from "./lib/analytics";
 
 const C = {
@@ -25,57 +26,6 @@ const EFT_DETAILS = {
   accountNumber: "11449650740",
   accountType: "Transaction Account",
   branchCode: "679000",
-};
-
-const PLANS = {
-  starter: {
-    slug: "starter",
-    name: "Starter Pack",
-    tag: "Foundation",
-    setupDisplay: "R6,500",
-    setupCents: 650000,
-    monthlyDisplay: "R2,500",
-    features: [
-      "5-page mobile-optimised website",
-      "Lead capture & enquiry management",
-      "Google Business Profile setup",
-      "Automated review requests (Email & WhatsApp)",
-      "Monthly performance report",
-    ],
-  },
-  growth: {
-    slug: "growth",
-    name: "Growth Pack",
-    tag: "Most Popular",
-    setupDisplay: "R9,500",
-    setupCents: 950000,
-    monthlyDisplay: "R5,500",
-    features: [
-      "Everything in Starter",
-      "AI webchat",
-      "AI chatbot with lead qualification",
-      "Automated follow-ups (Email & WhatsApp)",
-      "Missed-call text-back",
-      "CRM integration & lead dashboard",
-      "Reputation management",
-    ],
-  },
-  "growth-max": {
-    slug: "growth-max",
-    name: "Growth Max Pack",
-    tag: "Full Partnership",
-    setupDisplay: "R25,000",
-    setupCents: 2500000,
-    monthlyDisplay: "R9,500",
-    features: [
-      "Everything in Growth",
-      "AI SMS nurture sequences",
-      "Custom landing pages & funnels",
-      "Advanced booking & intake automation",
-      "Priority support",
-      "Monthly strategy call",
-    ],
-  },
 };
 
 const EMPTY_FORM = { name: "", business: "", email: "", phone: "", phoneCountry: "ZA" };
@@ -416,7 +366,7 @@ export default function CheckoutPage() {
                   background: "rgba(255,107,0,0.08)", border: "1px solid rgba(255,107,0,0.15)",
                   color: C.accent, fontSize: 11, fontWeight: 600, marginBottom: 10,
                 }}>
-                  {plan.tag}
+                  {plan.checkoutTag}
                 </div>
                 <h3 style={{ fontSize: 20, margin: 0, fontFamily: "system-ui, sans-serif" }}>{plan.name}</h3>
                 <p style={{ fontSize: 13, color: C.muted, margin: "4px 0 0" }}>Once-off setup fee · then {plan.monthlyDisplay}/mo after go-live</p>
