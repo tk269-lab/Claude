@@ -77,6 +77,7 @@ const RAW_CARE_PLANS = [
     monthlyCents: 75000,  // R750
     tag: null,
     description: "Keep your website secure, backed up, and online — the essentials, handled for you.",
+    bestFor: "A brochure site that rarely changes, where you mainly need it to stay up, stay safe, and stay current.",
     features: [
       "Managed hosting & SSL certificate",
       "Weekly automated backups",
@@ -93,6 +94,7 @@ const RAW_CARE_PLANS = [
     monthlyCents: 150000, // R1,500
     tag: "Most Popular",
     description: "Everything kept current, plus priority help and a monthly health check on your site.",
+    bestFor: "A site you actually use — new services, seasonal offers, prices that move — where you want the changes done for you and someone watching the numbers.",
     features: [
       "Everything in Essential Care",
       "Up to 3 hours of edits / month",
@@ -109,6 +111,7 @@ const RAW_CARE_PLANS = [
     monthlyCents: 250000, // R2,500
     tag: null,
     description: "Hands-off peace of mind, with ongoing strategy built into your retainer.",
+    bestFor: "A business where the website is a main source of work, and you want it treated as one — edits on demand, leads tracked, and a quarterly look at what to do next.",
     features: [
       "Everything in Pro Care",
       "Unlimited small edits (fair use)",

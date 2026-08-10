@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Check, ShieldCheck, Gauge, LifeBuoy } from 'lucide-react'
+import { Check, ShieldCheck, Gauge, LifeBuoy, ArrowRight } from 'lucide-react'
 import { Navbar, Footer, OrangeButton } from './site'
 import { ContactSection } from './homeSections'
 import { CARE_PLANS } from './lib/plans.js'
@@ -13,9 +13,15 @@ type CarePlan = {
   name: string
   tag: string | null
   description: string
+  bestFor: string
   features: string[]
+  monthlyDisplay: string
   featured: boolean
 }
+
+/* Entry tier deliberately carries no "from" price — the conversation about what
+   a site actually needs should happen before an anchor number does. */
+const TIERS_WITH_FROM_PRICE = ['care-pro', 'care-premium']
 
 const reasons = [
   {
@@ -97,56 +103,65 @@ export default function CarePage() {
             </h2>
             <p className="text-[16px] text-gray-600 leading-[1.8]">
               Every plan covers the essentials. The difference is how much of the ongoing work — edits, reporting and
-              strategy — you hand over to us.
+              strategy — you hand over to us. We match the plan to your site on a short call, so nothing is quoted
+              before we understand what you actually need.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-start">
-            {(CARE_PLANS as CarePlan[]).map((p) => (
-              <div
-                key={p.slug}
-                className={`rounded-2xl overflow-hidden bg-white ${
-                  p.featured
-                    ? 'border-2 border-[#FF6B00] shadow-[0_8px_30px_rgba(255,107,0,0.12)]'
-                    : 'border border-gray-200'
-                }`}
-              >
-                {p.tag && (
-                  <div className="bg-gradient-to-r from-[#FF6B00] to-[#FF8533] text-white text-[12px] font-bold uppercase tracking-wider text-center py-2">
-                    {p.tag}
+          {/* Explained tiers, not priced cards — each one reads as "here is who this
+             is for and what it covers", with the CTA at the end of the explanation. */}
+          <div className="flex flex-col">
+            {(CARE_PLANS as CarePlan[]).map((p, i) => {
+              const showFromPrice = TIERS_WITH_FROM_PRICE.includes(p.slug)
+              return (
+                <div
+                  key={p.slug}
+                  className={`grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-6 lg:gap-14 py-10 ${
+                    i < CARE_PLANS.length - 1 ? 'border-b border-gray-300' : ''
+                  }`}
+                >
+                  {/* Left: the tier and who it suits */}
+                  <div>
+                    <div className="flex items-baseline gap-3 flex-wrap mb-3">
+                      <h3 className="text-[24px] font-semibold text-gray-900">{p.name}</h3>
+                      {showFromPrice && (
+                        <span className="text-[13px] font-medium text-gray-500">
+                          from <span className="text-[#FF6B00] font-semibold">{p.monthlyDisplay}</span>/mo
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[15px] text-gray-600 leading-[1.7]">{p.description}</p>
                   </div>
-                )}
-                <div className="p-7">
-                  <h3 className={`text-[19px] font-semibold mb-3 ${p.featured ? 'text-[#FF6B00]' : 'text-gray-900'}`}>
-                    {p.name}
-                  </h3>
-                  <p className="text-[13px] text-gray-600 leading-relaxed mb-6">{p.description}</p>
-                  <div className="h-px bg-gray-200 mb-5" />
-                  <div className="flex flex-col gap-3 mb-7">
-                    {p.features.map((f) => (
-                      <div key={f} className="flex items-start gap-2.5">
-                        <Check
-                          size={16}
-                          className={`shrink-0 mt-0.5 ${p.featured ? 'text-[#FF6B00]' : 'text-[#16a34a]'}`}
-                          strokeWidth={2.5}
-                        />
-                        <span className="text-[13px] leading-snug text-gray-600">{f}</span>
-                      </div>
-                    ))}
+
+                  {/* Right: who it is for, what is covered, and the CTA */}
+                  <div>
+                    <p className="text-[15px] text-gray-900 leading-[1.75] mb-6">
+                      <span className="text-[11px] font-semibold tracking-[0.14em] text-gray-500 uppercase block mb-2">
+                        Best suited to
+                      </span>
+                      {p.bestFor}
+                    </p>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2.5 mb-7">
+                      {p.features.map((f) => (
+                        <div key={f} className="flex items-start gap-2.5">
+                          <Check size={16} className="shrink-0 mt-0.5 text-[#16a34a]" strokeWidth={2.5} />
+                          <span className="text-[14px] leading-snug text-gray-600">{f}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    <a
+                      href="#contact"
+                      className="group inline-flex items-center gap-2 rounded-full border border-gray-300 bg-white px-6 py-3 text-[14px] font-semibold text-gray-900 hover:border-[#FF6B00] hover:text-[#FF6B00] transition-colors"
+                    >
+                      Talk to us about {p.name}
+                      <ArrowRight size={16} className="transition-transform duration-300 group-hover:translate-x-1" />
+                    </a>
                   </div>
-                  <a
-                    href="#contact"
-                    className={`w-full inline-flex items-center justify-center rounded-full py-3 text-[14px] font-medium transition-colors ${
-                      p.featured
-                        ? 'bg-[#FF6B00] hover:bg-[#CC4A00] text-white'
-                        : 'border border-gray-300 hover:border-gray-900 text-gray-900'
-                    }`}
-                  >
-                    Enquire about {p.name}
-                  </a>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
 
           <p className="text-center text-[14px] text-gray-600 leading-relaxed mt-10 max-w-[720px] mx-auto">
