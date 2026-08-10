@@ -3,7 +3,6 @@ import { motion, useInView, AnimatePresence } from "framer-motion";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { nationalToE164, PHONE_COUNTRY_OPTIONS, validateNationalPhone } from "./lib/phoneIntl";
 import { WHATSAPP_CHAT_URL } from "./constants/contact";
-import { supabase } from "./lib/supabase";
 import { getSupabaseFunctionHeaders } from "./lib/supabaseFunctions";
 import { ADD_ONS, formatRand } from "./lib/addons";
 import { PLANS as plans } from "./lib/plans";
@@ -276,248 +275,23 @@ function BtnGhost({ children, onClick }) {
 const NAV_LINKS = [
   { id: "services", label: "Services" },
   { id: "process",  label: "Process" },
-  { id: "pricing",  label: "Pricing" },
   { id: "contact",  label: "Contact" },
 ];
 
-/* Account avatar — shows initials or person icon */
-function Avatar({ name, size = 30 }) {
-  const initials = name
-    ? name.trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase()
-    : null;
-  return (
-    <div style={{
-      width: size, height: size, borderRadius: "50%",
-      background: `linear-gradient(135deg, ${C.accent}, #FF8533)`,
-      display: "flex", alignItems: "center", justifyContent: "center",
-      fontSize: size * 0.38, fontWeight: 700, color: "#fff",
-      fontFamily: "system-ui, sans-serif", flexShrink: 0,
-      boxShadow: "0 0 12px rgba(255,107,0,0.35)",
-    }}>
-      {initials || (
-        <svg width={size * 0.55} height={size * 0.55} viewBox="0 0 24 24" fill="none"
-          stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-          <circle cx="12" cy="7" r="4" />
-        </svg>
-      )}
-    </div>
-  );
-}
-
-/* Account widget — shared between desktop and mobile */
-function AccountWidget({
-  authUser,
-  profile,
-  dropdownOpen,
-  setDropdownOpen,
-  dropdownRef,
-  onSignOut,
-  navigate,
-}) {
-  return (
-    <div ref={dropdownRef} style={{ position: "relative" }}>
-      {authUser ? (
-        <button
-          onClick={() => setDropdownOpen((v) => !v)}
-          aria-label="Account menu"
-          style={{
-            background: "none", border: `1px solid ${dropdownOpen ? "rgba(255,107,0,0.4)" : C.border}`,
-            borderRadius: 10, padding: "4px 10px 4px 6px",
-            cursor: "pointer", display: "flex", alignItems: "center", gap: 8,
-            transition: "border-color 0.2s",
-          }}
-        >
-          <Avatar name={profile?.full_name} size={26} />
-          <span style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: "system-ui, sans-serif", maxWidth: 100, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            {profile?.full_name?.split(" ")[0] || "Account"}
-          </span>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={C.muted} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-            style={{ transform: dropdownOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s", flexShrink: 0 }}>
-            <polyline points="6 9 12 15 18 9" />
-          </svg>
-        </button>
-      ) : (
-        <Link
-          to="/login"
-          style={{
-            display: "inline-flex", alignItems: "center", gap: 6,
-            padding: "7px 14px", borderRadius: 9,
-            border: `1px solid ${C.border}`, background: "transparent",
-            color: C.text, fontSize: 13, fontWeight: 600,
-            fontFamily: "system-ui, sans-serif", textDecoration: "none",
-            transition: "border-color 0.2s",
-          }}
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-            <circle cx="12" cy="7" r="4" />
-          </svg>
-          Sign in
-        </Link>
-      )}
-
-      {/* Dropdown panel */}
-      <AnimatePresence>
-        {dropdownOpen && authUser && (
-          <motion.div
-            initial={{ opacity: 0, y: 6, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 6, scale: 0.97 }}
-            transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-            style={{
-              position: "absolute", top: "calc(100% + 10px)", right: 0,
-              width: 240, zIndex: 200,
-              background: "rgba(14,18,26,0.98)",
-              border: `1px solid ${C.border}`,
-              borderRadius: 14, overflow: "hidden",
-              backdropFilter: "blur(24px)",
-              boxShadow: "0 16px 48px rgba(0,0,0,0.5)",
-            }}
-          >
-            {/* User info */}
-            <div style={{ padding: "16px 16px 12px", borderBottom: `1px solid ${C.border}` }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <Avatar name={profile?.full_name} size={36} />
-                <div style={{ overflow: "hidden" }}>
-                  <p style={{ fontSize: 14, fontWeight: 700, color: C.text, margin: 0, fontFamily: "system-ui, sans-serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {profile?.full_name || "Your account"}
-                  </p>
-                  <p style={{ fontSize: 12, color: C.muted, margin: 0, fontFamily: "system-ui, sans-serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {authUser.email}
-                  </p>
-                </div>
-              </div>
-              {profile?.business_name && (
-                <p style={{ fontSize: 12, color: C.muted, margin: "8px 0 0", fontFamily: "system-ui, sans-serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                  {profile.business_name}
-                </p>
-              )}
-            </div>
-
-            {/* Menu items */}
-            <div style={{ padding: "8px" }}>
-              <button
-                onClick={() => { navigate("/login?edit=1"); setDropdownOpen(false); }}
-                style={{
-                  width: "100%", background: "none", border: "none",
-                  color: C.muted, fontSize: 13, fontWeight: 500,
-                  fontFamily: "system-ui, sans-serif", cursor: "pointer",
-                  padding: "9px 10px", borderRadius: 8, textAlign: "left",
-                  display: "flex", alignItems: "center", gap: 8,
-                  transition: "background 0.15s, color 0.15s",
-                }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; e.currentTarget.style.color = C.text; }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = "none"; e.currentTarget.style.color = C.muted; }}
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
-                </svg>
-                Edit profile
-              </button>
-
-              <div style={{ height: 1, background: C.border, margin: "6px 0" }} />
-
-              <button
-                onClick={onSignOut}
-                style={{
-                  width: "100%", background: "none", border: "none",
-                  color: C.muted, fontSize: 13, fontWeight: 500,
-                  fontFamily: "system-ui, sans-serif", cursor: "pointer",
-                  padding: "9px 10px", borderRadius: 8, textAlign: "left",
-                  display: "flex", alignItems: "center", gap: 8,
-                  transition: "background 0.15s, color 0.15s",
-                }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,80,40,0.08)"; e.currentTarget.style.color = "#FF9A8A"; }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = "none"; e.currentTarget.style.color = C.muted; }}
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" />
-                </svg>
-                Sign out
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
 export function Navbar() {
   const [open, setOpen] = useState(false);         // mobile menu
-  const [dropdownOpen, setDropdownOpen] = useState(false); // account dropdown
-  const [authUser, setAuthUser] = useState(null);
-  const [profile, setProfile] = useState(null);
-  const dropdownRef = useRef(null);
   const isMobile = useIsMobile(700);
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Smart nav: Pricing is its own page; other links scroll on the homepage,
-  // or route home + anchor when clicked from another page.
+  // Nav links scroll on the homepage, or route home + anchor from another page.
   const scrollTo = (id) => {
     setOpen(false);
-    if (id === "pricing") { navigate("/pricing"); return; }
     if (location.pathname !== "/") {
       navigate(`/#${id}`);
     } else {
       document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
     }
-  };
-
-  /* Load auth state + profile */
-  useEffect(() => {
-    let isMounted = true;
-
-    const loadProfile = async (userId) => {
-      const { data } = await supabase
-        .from("profiles")
-        .select("full_name, business_name")
-        .eq("id", userId)
-        .maybeSingle();
-      if (isMounted) setProfile(data);
-    };
-
-    const applySession = async (session) => {
-      if (session?.user) {
-        if (!isMounted) return;
-        setAuthUser(session.user);
-        await loadProfile(session.user.id);
-      } else if (isMounted) {
-        setAuthUser(null);
-        setProfile(null);
-      }
-    };
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      void applySession(session);
-    });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      void applySession(session);
-    });
-    return () => {
-      isMounted = false;
-      subscription.unsubscribe();
-    };
-  }, []);
-
-  /* Close dropdown on outside click */
-  useEffect(() => {
-    if (!dropdownOpen) return;
-    const handler = (e) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
-        setDropdownOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [dropdownOpen]);
-
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    setDropdownOpen(false);
-    setOpen(false);
   };
 
   return (
@@ -548,17 +322,8 @@ export function Navbar() {
           <Logo size={20} />
 
           {isMobile ? (
-            /* Mobile: account widget + hamburger */
+            /* Mobile: hamburger */
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <AccountWidget
-                authUser={authUser}
-                profile={profile}
-                dropdownOpen={dropdownOpen}
-                setDropdownOpen={setDropdownOpen}
-                dropdownRef={dropdownRef}
-                onSignOut={handleSignOut}
-                navigate={navigate}
-              />
               <button
                 onClick={() => setOpen((v) => !v)}
                 aria-label="Toggle menu"
@@ -581,7 +346,7 @@ export function Navbar() {
               </button>
             </div>
           ) : (
-            /* Desktop: nav links + account widget */
+            /* Desktop: nav links */
             <div style={{ display: "flex", gap: 2, alignItems: "center" }}>
               {NAV_LINKS.map(({ id, label }) => (
                 <motion.button
@@ -601,16 +366,6 @@ export function Navbar() {
               <BtnPrimary onClick={() => scrollTo("contact")} style={{ padding: "8px 18px", fontSize: 13, marginLeft: 4 }}>
                 Get Started
               </BtnPrimary>
-              <div style={{ width: 1, height: 20, background: C.border, margin: "0 6px" }} />
-              <AccountWidget
-                authUser={authUser}
-                profile={profile}
-                dropdownOpen={dropdownOpen}
-                setDropdownOpen={setDropdownOpen}
-                dropdownRef={dropdownRef}
-                onSignOut={handleSignOut}
-                navigate={navigate}
-              />
             </div>
           )}
         </div>
@@ -643,40 +398,6 @@ export function Navbar() {
             >
               Get Started
             </BtnPrimary>
-
-            {/* Mobile: auth actions */}
-            {authUser ? (
-              <button
-                onClick={handleSignOut}
-                style={{
-                  marginTop: 10, background: "none", border: "none",
-                  color: C.muted, fontSize: 14, fontWeight: 500,
-                  cursor: "pointer", padding: "10px 0", textAlign: "left",
-                  fontFamily: "system-ui, sans-serif",
-                  display: "flex", alignItems: "center", gap: 8,
-                }}
-              >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" />
-                </svg>
-                Sign out
-              </button>
-            ) : (
-              <Link
-                to="/login"
-                onClick={() => setOpen(false)}
-                style={{
-                  marginTop: 10, color: C.muted, fontSize: 14, fontWeight: 500,
-                  textDecoration: "none", fontFamily: "system-ui, sans-serif",
-                  display: "flex", alignItems: "center", gap: 8, padding: "10px 0",
-                }}
-              >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
-                </svg>
-                Sign in
-              </Link>
-            )}
           </div>
         )}
       </nav>
@@ -1042,7 +763,7 @@ function AddOnsModal({ plan, onClose }) {
   const goToCheckout = () => {
     trackEvent("begin_checkout", { plan: plan.slug, addons: selected.join(",") || "none" });
     const addonsParam = selected.length ? `&addons=${selected.join(",")}` : "";
-    navigate(`/login?plan=${plan.slug}${addonsParam}`);
+    navigate(`/checkout?plan=${plan.slug}${addonsParam}`);
   };
 
   return (

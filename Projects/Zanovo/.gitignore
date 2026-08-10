@@ -29,6 +29,9 @@ dist-ssr
 Logos/
 *.zip
 
+# personal CV source (not part of the site)
+cv/
+
 # next.js
 .next
 out

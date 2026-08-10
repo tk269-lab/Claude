@@ -11,6 +11,8 @@ The live marketing site (`www.zanovo.co.za`) plus its lead/content pipeline and 
 ### Facts — architecture
 
 - **Marketing site:** React 19 + Vite SPA, react-router. Source of truth for pricing is `src/App.jsx`. Backed by Supabase (lead capture) + Paystack (payments), not a CMS.
+- **No accounts, no auth.** There is no login, no OAuth, and no Supabase auth client in the browser bundle (removed 2026-08-10). Checkout is guest-only: `/checkout` collects name, business, email, phone in its own form and charges via Paystack. Any unknown route (including `/login`) redirects to `/`.
+- **Routes:** `/` · `/plans` (shareable pricing, see Decisions) · `/checkout` · `/privacy` · `/refund` · `/terms`. Everything else falls through to a catch-all redirect home.
 - **Supabase edge functions:** `send-lead-email`, `paystack-webhook`, `generate-report`, `notify-whatsapp-click`. Contact form POSTs to an edge function with the anon key; `CheckoutPage.jsx` holds its own price table that drives the actual Paystack charge.
 - **Deploy:** Vercel auto-deploys from `main`. Vercel project Root Directory is `Projects/Zanovo` **relative to `~/Claude`**, so manual deploys must run with `--cwd /Users/tk/Claude` (deploying from inside the Zanovo folder double-nests the path). `.vercel/` folders under `~/Claude` hold production secrets (`.env.production.local`) — never `git add -A` from the repo root.
 - **Site health:** monitored by a GitHub Actions cron hitting `api/site-health-check.js`.
@@ -28,14 +30,17 @@ Zanovo Care retainers (maintenance):
 
 ### Decisions
 
-- **2026-06-09 pricing change (shipped, Crucible-backed):** Starter setup R4,500 → **R6,500** (aligned to SA 5-page market median ~R6,634); Growth Max setup R18,000 → **R25,000** (mid Business-build band, below the R40k enterprise floor); Growth left untouched as the decoy/anchor. Monthly fees deliberately **not** touched (MRR is churn-sensitive; setup is the safe lever). Pricing page reframed **outcomes-first** (booked jobs / missed calls / funnel leaks before price) + a "cancel anytime, keep your domain, own your data" trust line. PricingSection moved off the homepage to a dedicated `/pricing` route.
+- **2026-06-09 pricing change (shipped, Crucible-backed):** Starter setup R4,500 → **R6,500** (aligned to SA 5-page market median ~R6,634); Growth Max setup R18,000 → **R25,000** (mid Business-build band, below the R40k enterprise floor); Growth left untouched as the decoy/anchor. Monthly fees deliberately **not** touched (MRR is churn-sensitive; setup is the safe lever). Pricing page reframed **outcomes-first** (booked jobs / missed calls / funnel leaks before price) + a "cancel anytime, keep your domain, own your data" trust line. PricingSection moved off the homepage to a dedicated `/pricing` route (superseded 2026-08-10 — see below).
+- **2026-08-10 — pricing goes private, accounts removed:** Pricing is no longer a public page. The same PricingSection + CareSection now live at **`/plans`**, marked `noindex, nofollow` and dropped from `sitemap.xml` — a link TK sends a client directly, where they can pay on the spot. Removed from the site nav (desktop + mobile); old `/pricing` redirects home. TK's brief: pricing goes out as a link when a client asks, and seeing the price and paying happen in one place. Login/OAuth deleted in the same pass (`AuthPage.jsx`, `src/lib/supabase.js`, navbar account widget); nothing on the site required a logged-in user, and checkout no longer stops to make one.
 - Positioning stance: Zanovo sells a **subscription lead system**, not a one-time website — benchmark against the cost of a leaky funnel, not against web designers.
 - Deploy rule (saved to memory): whenever TK asks to deploy to Vercel, **also commit to git** — but only the specific Zanovo files, never a blanket add (repo root is the large personal `~/Claude` dir with secrets).
 - WhatsApp API: use **CallMeBot (free)** now; reconsider **360Dialog** only once there's revenue. 360Dialog's €500–1,000/mo pricing was the *Partner/reseller* hub — the wrong portal for a direct business user.
 
 ### Action items / status
 
-- **Named SA case studies on the pricing page** — the highest-leverage open item. The price increases carry more bounce risk without a trust signal (e.g. "Plumber in Centurion, calls up 3.2x in 90 days"). Not yet done.
+- **Named SA case studies on `/plans`** — the highest-leverage open item. The price increases carry more bounce risk without a trust signal (e.g. "Plumber in Centurion, calls up 3.2x in 90 days"). Not yet done.
+- **Disable the Google OAuth provider in the Supabase dashboard.** The site no longer uses it, but the provider stays enabled server-side until it is switched off by hand. Not yet done.
+- **Orphaned auth data:** the `profiles` table and any existing user accounts are now unused. Data and RLS left untouched — decide whether to clean up.
 - Contact-form automation (n8n): on submit → email confirmation ("received your strategy-call request, will be in touch within one day") + import phone into WhatsApp Business to send a Google Meet booking link. Built in the automation engine.
 
 ### Open questions

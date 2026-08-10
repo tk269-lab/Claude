@@ -10,7 +10,7 @@ Before answering, work out which project the request is about and **read the mat
 
 ## What lives where
 
-- `src/` — React 19 + Vite SPA (react-router). Pages: pricing, checkout, auth, policies. `src/_archive/` is dead code, do not extend it.
+- `src/` — React 19 + Vite SPA (react-router). Pages: home, `/plans` (private pricing link), checkout, policies. No auth — there is no login or OAuth, and checkout is guest-only. `src/_archive/` is dead code, do not extend it.
 - `api/site-health-check.js` — Vercel function hit by a GitHub Actions cron that watches site health.
 - `supabase/` — migrations and edge functions. Project keys go in `.env` (copy `.env.example`); never commit keys.
 - `content-pipeline/` — SQLite-backed social content system (ideas → review → drafts → approve). Driven by the `/pulse`, `/review`, `/generate-content`, `/approve` skills; scripts also runnable via `npm run discover|review|generate|approve|list|sync-posted` from `content-pipeline/`.

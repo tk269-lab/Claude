@@ -23,6 +23,17 @@
       "port": 5173
     },
     {
+      "name": "ilovemyflag-frontend",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "/Users/tk/Claude/Projects/ilovemyflag/frontend",
+        "run",
+        "dev"
+      ],
+      "port": 5180
+    },
+    {
       "name": "rezident-prototype",
       "runtimeExecutable": "python3",
       "runtimeArgs": [

@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
-import { useSearchParams, Link, useNavigate } from "react-router-dom";
+import { useSearchParams, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { PHONE_COUNTRY_OPTIONS, validateNationalPhone, nationalToE164 } from "./lib/phoneIntl";
-import { supabase } from "./lib/supabase";
 import { ADD_ONS, ADD_ON_MAP, formatRand, parseAddonParam } from "./lib/addons";
 import { PLAN_MAP as PLANS } from "./lib/plans";
 import { trackEvent } from "./lib/analytics";
@@ -177,7 +176,6 @@ export default function CheckoutPage() {
   }, []);
 
   const [params] = useSearchParams();
-  const navigate = useNavigate();
   const planKey = params.get("plan") || "growth";
   const plan = PLANS[planKey] || PLANS.growth;
 
@@ -199,42 +197,7 @@ export default function CheckoutPage() {
   const [eftStatus, setEftStatus] = useState("idle");   // idle | submitted
   const [successMethod, setSuccessMethod] = useState(null);
   const [paystackReady, setPaystackReady] = useState(false);
-  const [authUser, setAuthUser] = useState(null);
-  const [authChecked, setAuthChecked] = useState(false);
   const isMobile = useIsMobile();
-
-  /* ── Auth guard + profile pre-fill ── */
-  useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (!session) {
-        const addonsQS = params.get("addons") ? `&addons=${params.get("addons")}` : "";
-        navigate(`/login?plan=${planKey}${addonsQS}`, { replace: true });
-        return;
-      }
-      setAuthUser(session.user);
-
-      // Pre-fill form from saved profile
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("full_name, business_name, phone, phone_country")
-        .eq("id", session.user.id)
-        .maybeSingle();
-
-      if (profile) {
-        setForm({
-          name: profile.full_name || "",
-          business: profile.business_name || "",
-          email: session.user.email || "",
-          phone: profile.phone || "",
-          phoneCountry: profile.phone_country || "ZA",
-        });
-      } else {
-        setForm((f) => ({ ...f, email: session.user.email || "" }));
-      }
-
-      setAuthChecked(true);
-    });
-  }, [navigate, planKey]);
 
   const paymentRef = makeRef(form.business, form.name, plan.name);
 
@@ -298,7 +261,6 @@ export default function CheckoutPage() {
           { display_name: "Plan", variable_name: "plan", value: plan.name },
           { display_name: "Add-ons", variable_name: "addons", value: selectedAddons.map((a) => a.name).join(", ") || "None" },
           { display_name: "Total", variable_name: "total", value: totalDisplay },
-          { display_name: "User ID", variable_name: "user_id", value: authUser?.id ?? "" },
         ],
       },
       callback: () => {
@@ -310,7 +272,6 @@ export default function CheckoutPage() {
     handler.openIframe();
   };
 
-  if (!authChecked) return null; // redirect in progress or loading
   if (successMethod) return <SuccessScreen plan={plan} method={successMethod} />;
 
   const inputStyle = {
