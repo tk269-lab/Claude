@@ -10,7 +10,9 @@ Before answering, work out which project the request is about and **read the mat
 
 ## What lives where
 
-- `src/` — React 19 + Vite SPA (react-router). Pages: home, `/plans` (private pricing link), checkout, policies. No auth — there is no login or OAuth, and checkout is guest-only. `src/_archive/` is dead code, do not extend it.
+- `src/` — React 18 + TypeScript + Tailwind + Vite SPA (react-router 6). This is the light "Axion" design, adopted 2026-08-10 from `zanovo-redesign`; the old dark Framer-Motion UI is gone (recoverable from git history and `zanovo-redesign/zanovo-frontend-versions/v1-original-dark-theme`). Pages: home, `/plans` (private pricing link), checkout, policies. No auth — there is no login or OAuth, and checkout is guest-only. `src/_archive/` is dead code, do not extend it.
+- `src/lib/plans.js` + `src/lib/addons.js` — **single source of truth for every price** (build packs, Care retainers, add-ons), in cents. The plans page and checkout both derive their displayed prices from these, so what a client sees can never drift from what Paystack charges. Never hardcode a price in a component.
+- The hero uses the `shaders` library, which renders through **WebGPU** (Safari 18.2+/Chrome 121+) and spawns a blob Web Worker. `Home.tsx` checks `navigator.gpu` and paints a static CSS gradient instead on browsers without it — keep that guard, older Android and iOS are a real slice of the SA market. It — `index.html`'s CSP needs `worker-src 'self' blob:` or the hero background dies silently. Never call `canvas.getContext('webgl')` on that canvas to debug it: it permanently binds a different context type, after which the library's `getContext('webgpu')` returns null and the render loop throws `Cannot read properties of null (reading 'configure')` on every frame.
 - `api/site-health-check.js` — Vercel function hit by a GitHub Actions cron that watches site health.
 - `supabase/` — migrations and edge functions. Project keys go in `.env` (copy `.env.example`); never commit keys.
 - `content-pipeline/` — SQLite-backed social content system (ideas → review → drafts → approve). Driven by the `/pulse`, `/review`, `/generate-content`, `/approve` skills; scripts also runnable via `npm run discover|review|generate|approve|list|sync-posted` from `content-pipeline/`.
@@ -20,8 +22,8 @@ Before answering, work out which project the request is about and **read the mat
 ## Commands
 
 - `npm run dev` — Vite dev server
-- `npm run build` — production build (run before pushing UI changes; Vercel deploys from main)
-- `npm run lint` — ESLint
+- `npm run build` — `tsc -b && vite build` (run before pushing UI changes; Vercel deploys from main). The `tsc` step is the real check on app code.
+- `npm run lint` — ESLint. Note: the config only covers `.js`/`.jsx`, so it no longer sees the `.tsx` app code; type errors are caught by `tsc` in the build instead. Adding typescript-eslint is an open call.
 - There is no test suite. Verify changes with `npm run build` + `npm run lint` and the browser preview. Do not hunt for tests or install a framework unprompted.
 
 ## Model workflow

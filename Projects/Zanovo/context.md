@@ -10,10 +10,10 @@ The live marketing site (`www.zanovo.co.za`) plus its lead/content pipeline and 
 
 ### Facts — architecture
 
-- **Marketing site:** React 19 + Vite SPA, react-router. Source of truth for pricing is `src/App.jsx`. Backed by Supabase (lead capture) + Paystack (payments), not a CMS.
+- **Marketing site:** React 18 + TypeScript + Tailwind + Vite SPA, react-router 6 — the light "Axion" design adopted from `zanovo-redesign` on 2026-08-10. Source of truth for every price is `src/lib/plans.js` + `src/lib/addons.js` (cents), which both the plans page and checkout derive from. Backed by Supabase (lead capture) + Paystack (payments), not a CMS.
 - **No accounts, no auth.** There is no login, no OAuth, and no Supabase auth client in the browser bundle (removed 2026-08-10). Checkout is guest-only: `/checkout` collects name, business, email, phone in its own form and charges via Paystack. Any unknown route (including `/login`) redirects to `/`.
 - **Routes:** `/` · `/plans` (shareable pricing, see Decisions) · `/checkout` · `/privacy` · `/refund` · `/terms`. Everything else falls through to a catch-all redirect home.
-- **Supabase edge functions:** `send-lead-email`, `paystack-webhook`, `generate-report`, `notify-whatsapp-click`. Contact form POSTs to an edge function with the anon key; `CheckoutPage.jsx` holds its own price table that drives the actual Paystack charge.
+- **Supabase edge functions:** `send-lead-email`, `paystack-webhook`, `generate-report`, `notify-whatsapp-click`. Contact form POSTs to an edge function with the anon key; checkout charges through Paystack off the shared price source above.
 - **Deploy:** Vercel auto-deploys from `main`. Vercel project Root Directory is `Projects/Zanovo` **relative to `~/Claude`**, so manual deploys must run with `--cwd /Users/tk/Claude` (deploying from inside the Zanovo folder double-nests the path). `.vercel/` folders under `~/Claude` hold production secrets (`.env.production.local`) — never `git add -A` from the repo root.
 - **Site health:** monitored by a GitHub Actions cron hitting `api/site-health-check.js`.
 - **Security:** contact form guarded by reCAPTCHA + an `ALLOWED_ORIGINS` Supabase secret (edge functions pick up secret changes on next invocation, no redeploy needed).
@@ -32,6 +32,7 @@ Zanovo Care retainers (maintenance):
 
 - **2026-06-09 pricing change (shipped, Crucible-backed):** Starter setup R4,500 → **R6,500** (aligned to SA 5-page market median ~R6,634); Growth Max setup R18,000 → **R25,000** (mid Business-build band, below the R40k enterprise floor); Growth left untouched as the decoy/anchor. Monthly fees deliberately **not** touched (MRR is churn-sensitive; setup is the safe lever). Pricing page reframed **outcomes-first** (booked jobs / missed calls / funnel leaks before price) + a "cancel anytime, keep your domain, own your data" trust line. PricingSection moved off the homepage to a dedicated `/pricing` route (superseded 2026-08-10 — see below).
 - **2026-08-10 — pricing goes private, accounts removed:** Pricing is no longer a public page. The same PricingSection + CareSection now live at **`/plans`**, marked `noindex, nofollow` and dropped from `sitemap.xml` — a link TK sends a client directly, where they can pay on the spot. Removed from the site nav (desktop + mobile); old `/pricing` redirects home. TK's brief: pricing goes out as a link when a client asks, and seeing the price and paying happen in one place. Login/OAuth deleted in the same pass (`AuthPage.jsx`, `src/lib/supabase.js`, navbar account widget); nothing on the site required a logged-in user, and checkout no longer stops to make one.
+- **2026-08-10 — light redesign replaces the dark UI (TK's call):** The "Axion" light design from `zanovo-redesign` is now the live frontend; the original dark Framer-Motion UI is discarded (still in git history and in that repo's `zanovo-frontend-versions/v1-original-dark-theme`). Stack moved React 19/Vite 8/plain-JSX → React 18/Vite 5/TypeScript/Tailwind. Ported into the Zanovo repo rather than repointing Vercel at `zanovo-redesign`, because this repo holds `api/`, `supabase/`, the content pipeline and the health cron. Care retainers became payable at checkout in the process. Bundle grew ~235 kB → ~1.73 MB (479 kB gzip), almost entirely the `shaders` WebGL hero — open question below.
 - Positioning stance: Zanovo sells a **subscription lead system**, not a one-time website — benchmark against the cost of a leaky funnel, not against web designers.
 - Deploy rule (saved to memory): whenever TK asks to deploy to Vercel, **also commit to git** — but only the specific Zanovo files, never a blanket add (repo root is the large personal `~/Claude` dir with secrets).
 - WhatsApp API: use **CallMeBot (free)** now; reconsider **360Dialog** only once there's revenue. 360Dialog's €500–1,000/mo pricing was the *Partner/reseller* hub — the wrong portal for a direct business user.
@@ -46,6 +47,9 @@ Zanovo Care retainers (maintenance):
 ### Open questions
 
 - Whether to add the case-study trust signals before/after further pricing moves.
+- Whether the `shaders` hero is worth ~1.2 MB of JS on a South African mobile connection, or whether it should be lazy-loaded / swapped for a static image on mobile. Not yet measured on a real device.
+- Whether the static hero fallback should be used on *all* mobile devices, not just pre-WebGPU ones, to save the shader's download cost on metered connections.
+- Whether to add typescript-eslint so `npm run lint` covers the `.tsx` app code again.
 
 ---
 

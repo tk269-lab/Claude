@@ -1,6 +1,6 @@
 // ============================================================
 // Zanovo: build packages — SINGLE SOURCE OF TRUTH
-// Shared by the pricing cards (App.jsx) and checkout (CheckoutPage.jsx).
+// Shared by the plans page (PlansPage.tsx) and checkout (CheckoutPage.tsx).
 // Checkout charges `setupCents` through Paystack, so cents are the truth
 // and every displayed price is derived from them — never typed twice.
 // `cents` is in kobo (ZAR cents × 100) to match Paystack's amount unit.
@@ -68,12 +68,76 @@ const RAW_PLANS = [
   },
 ];
 
+// Zanovo Care retainers — monthly maintenance, billed from the first month.
+// Checkout can charge these directly, so they live here for the same reason.
+const RAW_CARE_PLANS = [
+  {
+    slug: "care-essential",
+    name: "Essential Care",
+    monthlyCents: 75000,  // R750
+    tag: null,
+    description: "Keep your website secure, backed up, and online — the essentials, handled for you.",
+    features: [
+      "Managed hosting & SSL certificate",
+      "Weekly automated backups",
+      "Security & uptime monitoring",
+      "Monthly software updates",
+      "Up to 1 hour of content edits / month",
+      "Email support",
+    ],
+    featured: false,
+  },
+  {
+    slug: "care-pro",
+    name: "Pro Care",
+    monthlyCents: 150000, // R1,500
+    tag: "Most Popular",
+    description: "Everything kept current, plus priority help and a monthly health check on your site.",
+    features: [
+      "Everything in Essential Care",
+      "Up to 3 hours of edits / month",
+      "Priority support",
+      "Monthly performance report",
+      "Plugin & dependency updates",
+      "Basic SEO monitoring",
+    ],
+    featured: true,
+  },
+  {
+    slug: "care-premium",
+    name: "Premium Care",
+    monthlyCents: 250000, // R2,500
+    tag: null,
+    description: "Hands-off peace of mind, with ongoing strategy built into your retainer.",
+    features: [
+      "Everything in Pro Care",
+      "Unlimited small edits (fair use)",
+      "Lead & conversion monitoring",
+      "Quarterly strategy review",
+      "Priority turnaround",
+      "WhatsApp support line",
+    ],
+    featured: false,
+  },
+];
+
 // Display strings are derived, so they can never drift from the charged amount
 export const PLANS = RAW_PLANS.map((p) => ({
   ...p,
+  kind: "pack",
   setupDisplay: formatRand(p.setupCents),
+  monthlyDisplay: formatRand(p.monthlyCents),
+}));
+
+export const CARE_PLANS = RAW_CARE_PLANS.map((p) => ({
+  ...p,
+  kind: "care",
   monthlyDisplay: formatRand(p.monthlyCents),
 }));
 
 // Quick lookup by slug (used by checkout's ?plan= param)
 export const PLAN_MAP = Object.fromEntries(PLANS.map((p) => [p.slug, p]));
+export const CARE_PLAN_MAP = Object.fromEntries(CARE_PLANS.map((p) => [p.slug, p]));
+
+// Every payable plan, packs and care together — what checkout resolves against
+export const ALL_PLAN_MAP = { ...PLAN_MAP, ...CARE_PLAN_MAP };
