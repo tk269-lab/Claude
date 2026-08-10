@@ -15,13 +15,16 @@ type CarePlan = {
   description: string
   bestFor: string
   features: string[]
+  monthlyCents: number
   monthlyDisplay: string
   featured: boolean
 }
 
-/* Entry tier deliberately carries no "from" price — the conversation about what
-   a site actually needs should happen before an anchor number does. */
-const TIERS_WITH_FROM_PRICE = ['care-pro', 'care-premium']
+/* The only price on this page: the entry point, stated once at the end. Per-tier
+   figures stay on the private /plans link so the tiers here read as explanations. */
+const cheapestCare = (CARE_PLANS as CarePlan[]).reduce((low, p) =>
+  p.monthlyCents < low.monthlyCents ? p : low,
+)
 
 const reasons = [
   {
@@ -112,7 +115,6 @@ export default function CarePage() {
              is for and what it covers", with the CTA at the end of the explanation. */}
           <div className="flex flex-col">
             {(CARE_PLANS as CarePlan[]).map((p, i) => {
-              const showFromPrice = TIERS_WITH_FROM_PRICE.includes(p.slug)
               return (
                 <div
                   key={p.slug}
@@ -122,14 +124,7 @@ export default function CarePage() {
                 >
                   {/* Left: the tier and who it suits */}
                   <div>
-                    <div className="flex items-baseline gap-3 flex-wrap mb-3">
-                      <h3 className="text-[24px] font-semibold text-gray-900">{p.name}</h3>
-                      {showFromPrice && (
-                        <span className="text-[13px] font-medium text-gray-500">
-                          from <span className="text-[#FF6B00] font-semibold">{p.monthlyDisplay}</span>/mo
-                        </span>
-                      )}
-                    </div>
+                    <h3 className="text-[24px] font-semibold text-gray-900 mb-3">{p.name}</h3>
                     <p className="text-[15px] text-gray-600 leading-[1.7]">{p.description}</p>
                   </div>
 
@@ -164,10 +159,22 @@ export default function CarePage() {
             })}
           </div>
 
-          <p className="text-center text-[14px] text-gray-600 leading-relaxed mt-10 max-w-[720px] mx-auto">
-            Care plans are matched to your site on a short call — how big it is, how often it changes, and how hands-on
-            you want to be. Already a Zanovo client? Care can be added to your build at any time.
-          </p>
+          <div className="mt-12 rounded-2xl border border-gray-200 bg-white px-6 py-9 sm:px-10 sm:py-10 text-center max-w-[820px] mx-auto">
+            <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-[0.14em] mb-3">
+              Care plans start from
+            </p>
+            <p className="text-gray-900 font-semibold tracking-[-0.02em]" style={{ fontSize: 'clamp(34px, 6vw, 48px)' }}>
+              <span className="text-[#FF6B00]">{cheapestCare.monthlyDisplay}</span>
+              <span className="text-[18px] font-medium text-gray-500"> / month</span>
+            </p>
+            <p className="text-[15px] text-gray-600 leading-[1.75] mt-5 max-w-[620px] mx-auto">
+              Plans are matched to your site on a short call — how big it is, how often it changes, and how hands-on you
+              want to be. Already a Zanovo client? Care can be added to your build at any time.
+            </p>
+            <div className="mt-8 flex justify-center">
+              <OrangeButton href="#contact">Get your care plan</OrangeButton>
+            </div>
+          </div>
         </div>
       </section>
 
