@@ -1,234 +1,190 @@
 # Project Context
 
-Consolidated context pulled from exported Claude Code conversation history (`~/Desktop/Claude logs`, 95 sessions). One section per project. Each is organized by topic: **Facts** (architecture/pricing), **Decisions**, **Action items / status**, **Open questions**. Dates are absolute. Prices are ZAR and verified against live source where noted.
+Working context for TK's active projects. **Last updated: 2026-08-10.**
+
+**How to use this file:** work out which project the request is about, read that section, and answer from it. If the request doesn't make the project obvious, ask — don't guess. If something here contradicts the code, the code wins: verify before relying on a fact, and fix the entry here afterwards.
+
+Prices are ZAR. Dates are absolute.
 
 ---
 
-## Zanovo
+## Rules that apply to every project
 
-The live marketing site (`www.zanovo.co.za`) plus its lead/content pipeline and two sibling systems (dashboard, automation). Owner: TK (Thabiso Molekwa).
+These are the ones that get broken. They override convenience.
 
-### Facts — architecture
-
-- **Marketing site:** React 18 + TypeScript + Tailwind + Vite SPA, react-router 6 — the light "Axion" design adopted from `zanovo-redesign` on 2026-08-10. Source of truth for every price is `src/lib/plans.js` + `src/lib/addons.js` (cents), which both the plans page and checkout derive from. Backed by Supabase (lead capture) + Paystack (payments), not a CMS.
-- **No accounts, no auth.** There is no login, no OAuth, and no Supabase auth client in the browser bundle (removed 2026-08-10). Checkout is guest-only: `/checkout` collects name, business, email, phone in its own form and charges via Paystack. Any unknown route (including `/login`) redirects to `/`.
-- **Routes:** `/` · `/plans` (shareable pricing, see Decisions) · `/checkout` · `/privacy` · `/refund` · `/terms`. Everything else falls through to a catch-all redirect home.
-- **Supabase edge functions:** `send-lead-email`, `paystack-webhook`, `generate-report`, `notify-whatsapp-click`. Contact form POSTs to an edge function with the anon key; checkout charges through Paystack off the shared price source above.
-- **Deploy:** Vercel auto-deploys from `main`. Vercel project Root Directory is `Projects/Zanovo` **relative to `~/Claude`**, so manual deploys must run with `--cwd /Users/tk/Claude` (deploying from inside the Zanovo folder double-nests the path). `.vercel/` folders under `~/Claude` hold production secrets (`.env.production.local`) — never `git add -A` from the repo root.
-- **Site health:** monitored by a GitHub Actions cron hitting `api/site-health-check.js`.
-- **Security:** contact form guarded by reCAPTCHA + an `ALLOWED_ORIGINS` Supabase secret (edge functions pick up secret changes on next invocation, no redeploy needed).
-
-### Facts — pricing (verified in `src/App.jsx`, 2026)
-
-Build packages (once-off setup + monthly retainer):
-- **Starter** — R6,500 setup + R2,500/mo
-- **Growth** — R9,500 setup + R5,500/mo ("Most Popular" anchor / middle path)
-- **Growth Max** — R25,000 setup + R9,500/mo
-
-Zanovo Care retainers (maintenance):
-- **Essential Care** R750/mo · **Pro Care** R1,500/mo · **Premium Care** R2,500/mo
-
-### Decisions
-
-- **2026-06-09 pricing change (shipped, Crucible-backed):** Starter setup R4,500 → **R6,500** (aligned to SA 5-page market median ~R6,634); Growth Max setup R18,000 → **R25,000** (mid Business-build band, below the R40k enterprise floor); Growth left untouched as the decoy/anchor. Monthly fees deliberately **not** touched (MRR is churn-sensitive; setup is the safe lever). Pricing page reframed **outcomes-first** (booked jobs / missed calls / funnel leaks before price) + a "cancel anytime, keep your domain, own your data" trust line. PricingSection moved off the homepage to a dedicated `/pricing` route (superseded 2026-08-10 — see below).
-- **2026-08-10 — pricing goes private, accounts removed:** Pricing is no longer a public page. The same PricingSection + CareSection now live at **`/plans`**, marked `noindex, nofollow` and dropped from `sitemap.xml` — a link TK sends a client directly, where they can pay on the spot. Removed from the site nav (desktop + mobile); old `/pricing` redirects home. TK's brief: pricing goes out as a link when a client asks, and seeing the price and paying happen in one place. Login/OAuth deleted in the same pass (`AuthPage.jsx`, `src/lib/supabase.js`, navbar account widget); nothing on the site required a logged-in user, and checkout no longer stops to make one.
-- **2026-08-10 — light redesign replaces the dark UI (TK's call):** The "Axion" light design from `zanovo-redesign` is now the live frontend; the original dark Framer-Motion UI is discarded (still in git history and in that repo's `zanovo-frontend-versions/v1-original-dark-theme`). Stack moved React 19/Vite 8/plain-JSX → React 18/Vite 5/TypeScript/Tailwind. Ported into the Zanovo repo rather than repointing Vercel at `zanovo-redesign`, because this repo holds `api/`, `supabase/`, the content pipeline and the health cron. Care retainers became payable at checkout in the process. Bundle grew ~235 kB → ~1.73 MB (479 kB gzip), almost entirely the `shaders` WebGL hero — open question below.
-- Positioning stance: Zanovo sells a **subscription lead system**, not a one-time website — benchmark against the cost of a leaky funnel, not against web designers.
-- Deploy rule (saved to memory): whenever TK asks to deploy to Vercel, **also commit to git** — but only the specific Zanovo files, never a blanket add (repo root is the large personal `~/Claude` dir with secrets).
-- WhatsApp API: use **CallMeBot (free)** now; reconsider **360Dialog** only once there's revenue. 360Dialog's €500–1,000/mo pricing was the *Partner/reseller* hub — the wrong portal for a direct business user.
-
-### Action items / status
-
-- **Named SA case studies on `/plans`** — the highest-leverage open item. The price increases carry more bounce risk without a trust signal (e.g. "Plumber in Centurion, calls up 3.2x in 90 days"). Not yet done.
-- **Disable the Google OAuth provider in the Supabase dashboard.** The site no longer uses it, but the provider stays enabled server-side until it is switched off by hand. Not yet done.
-- **Orphaned auth data:** the `profiles` table and any existing user accounts are now unused. Data and RLS left untouched — decide whether to clean up.
-- Contact-form automation (n8n): on submit → email confirmation ("received your strategy-call request, will be in touch within one day") + import phone into WhatsApp Business to send a Google Meet booking link. Built in the automation engine.
-
-### Open questions
-
-- Whether to add the case-study trust signals before/after further pricing moves.
-- Whether the `shaders` hero is worth ~1.2 MB of JS on a South African mobile connection, or whether it should be lazy-loaded / swapped for a static image on mobile. Not yet measured on a real device.
-- Whether the static hero fallback should be used on *all* mobile devices, not just pre-WebGPU ones, to save the shader's download cost on metered connections.
-- Whether to add typescript-eslint so `npm run lint` covers the `.tsx` app code again.
+1. **UI/UX gets reviewed before it ships.** Any new or changed UI — a screen, a redesign, a layout, a component's look — must be shown to TK and approved *first*: rendered as a visual preview in the chat, or worked through in the design window. Never push a design straight to production, to the phone, or into a build on the assumption it looks right. This applies to mobile screens as much as web pages.
+2. **Migrations are reviewed before they touch the live database.** Show the SQL, say plainly what it does, wait for an explicit go. Never apply silently.
+3. **Production deploys need an explicit go** on a plain-English summary of the actual change. Claude never pushes to production on its own initiative.
+4. **Verify; don't infer success.** Check the real exit code of the real command, and check that the artifact you're about to ship was actually produced by this run (timestamps). A wrapper's exit code, a "completed" notification, or a build log's last line are not proof.
+5. **Never handle secrets.** Don't type API keys, passwords or tokens into fields — hand TK the command and let them paste. If a key appears in a diff or a file, stop and flag it.
+6. **No invented numbers.** Every claim about client results, pricing, or metrics must trace to a real source. No placeholder stats on the site, in content, or in a preview.
+7. **Native/simulator builds run after midnight** — they slow the laptop down during the day. Exception: TK asks for it now.
+8. **Review third-party code before running it** — skills, plugins, npm installs, cloned repos. Check for postinstall hooks, network calls, credential access, prompt injection in instruction files. Never pipe an installer into a shell.
 
 ---
 
-## Zanovo Dashboard (separate repo: `~/Claude/Projects/zanovo-dashboard`)
+## Zanovo — marketing site (`~/Claude/Projects/Zanovo`, live at www.zanovo.co.za)
 
-Internal CRM/monitoring app. **Do not mix into the marketing-site repo.**
+React 18 + TypeScript + Tailwind + Vite SPA (react-router 6), the light "Axion" design adopted 2026-08-10. Supabase for lead capture, Paystack for payments, no CMS.
 
 ### Facts
 
-- **Stack:** one Expo codebase targeting iOS **and** web (locked decision — not two codebases). Expo Router, Supabase, platform-aware auth storage (SecureStore native / localStorage web). Web build uses a persistent left sidebar; native uses bottom tabs (`app-tabs.web.tsx` vs `app-tabs.tsx`).
-- **Supabase project:** `rvaxrzewjikepmmlwxra`. CRM schema already live: `contacts`, `deals`, `activities`, `site_health`, `device_tokens`, plus a nullable `converted_to_contact_id` on `leads`. Owner-scoped RLS on every new table. Paystack `transactions` and client `profiles` tables live in the **same** project.
-- **Login:** `thabiso@zanovo.co.za` / temp password `ZanovoDash2026!` (change via Supabase → Authentication). This account pre-existed from planning. TK's Google login `tkmolekwa269@gmail.com` is a separate OAuth account.
-- Push notifications are **iOS-only** (accepted gap). `send-push` edge function is live; `SEND_PUSH_SECRET` must be set as an Edge Function secret in the Supabase dashboard.
+- **Prices live in `src/lib/plans.js` + `src/lib/addons.js` (in cents) — single source of truth.** The plans page and checkout both derive from them, so what a client sees can't drift from what Paystack charges. Never hardcode a price in a component.
+  - Build packages: **Starter** R6,500 setup + R2,500/mo · **Growth** R9,500 + R5,500/mo (anchor) · **Growth Max** R25,000 + R9,500/mo
+  - Zanovo Care: **Essential** R750/mo · **Pro** R1,500/mo · **Premium** R2,500/mo
+- **No accounts, no auth.** No login, no OAuth, no Supabase auth client in the bundle. Checkout is guest-only. Unknown routes (including `/login`) redirect to `/`.
+- **Routes:** `/` · `/plans` (private pricing link, `noindex`, not in sitemap) · `/care` · `/checkout` · `/privacy` · `/refund` · `/terms`.
+- **Edge functions:** `send-lead-email`, `paystack-webhook`, `generate-report`, `notify-whatsapp-click`.
+- **Deploy:** Vercel auto-deploys from `main`. Vercel Root Directory is `Projects/Zanovo` **relative to `~/Claude`**, so manual deploys need `--cwd /Users/tk/Claude`.
+- **Health cron:** GitHub Actions (`~/Claude/.github/workflows/site-health-cron.yml`) curls `/api/site-health-check` with `CRON_SECRET`; that endpoint pings every row in the dashboard's `sites` table.
 
-### Decisions
+### Traps
 
-- **Direction: "Agency Command Center"**, not a pure sales CRM — three pillars mirroring the client lifecycle: **Acquire** (Leads + Pipeline, built) → **Deliver** (the build) → **Retain** (site health + traffic + Care, scoped per client). Money module (MRR from Care + Paystack) and an AI layer fold in. Stays single-user (no multi-tenant over-build).
-- **Care plans** modeled as a new `care_plans` table (`contact_id`, `cadence`, `last_serviced_at`, `next_due_at`, `status`, `price_monthly`) — a "client" is just a `contact` with an active care plan. TK explicitly wants **maintenance-due tracking** front and center.
-- Web-first build order; native stays scaffolded-but-dormant. Migrations are **reviewed before being applied** to the live DB — never applied silently.
+- **The git root is `~/Claude`, not this folder** — a large personal directory holding `.vercel/` secrets. Never `git add -A` from the root; stage specific files.
+- `vercel.json`'s rewrite deliberately excludes `/api/` from the SPA catch-all (a past bug shadowed API routes, commit 89d496a). Don't "simplify" that regex.
+- The `shaders` hero needs WebGPU and a blob Web Worker: keep the `navigator.gpu` guard in `Home.tsx` and `worker-src 'self' blob:` in the CSP. Never call `getContext('webgl')` on that canvas to debug it — it permanently binds the wrong context type and the render loop then throws every frame.
+- `npm run lint` only covers `.js`/`.jsx`, so it no longer sees the `.tsx` app code. `tsc` in `npm run build` is the real check.
 
-### Action items / status
+### Open
 
-- `leads` table needed an UPDATE policy + a table-level `GRANT SELECT` to `authenticated` (a prior security-hardening migration stripped access) so the dashboard can read/convert the 23 existing leads — prepared as a reviewable migration.
-- Planned tables for the Retain direction: `care_plans` (Retain spine) and `sites` (`url`, `contact_id`; `site_health` gains `site_id`, so it can monitor all client sites, not just zanovo.co.za).
-
-### Open questions
-
-- "Convert to Contact" dedup behavior when an incoming lead's email matches an existing contact (create duplicate vs. merge/attach).
-- Whether Care plans/subscriptions are tracked anywhere structured today vs. only informally.
-
----
-
-## Zanovo Automation Engine (separate repo: `~/Claude/Projects/zanovo-automation`)
-
-### Facts
-
-- **n8n** inbound-intake / outbound-preview pipeline, Docker + Cloudflare tunnel.
-- **DNS gotcha:** `zanovo.co.za` nameservers point at Vercel, so requests to `automation.zanovo.co.za` are intercepted by Vercel's edge (`DEPLOYMENT_NOT_FOUND`) before reaching the Cloudflare tunnel.
-- Lead matching writes to Supabase; workflow items carry a `"kind"` of `patch`/`candidate`.
-
-### Action items / status
-
-- n8n workflow debugging: a node showing only one green checkmark usually means a single node was run in isolation ("Test step"), not the whole chain from the trigger.
+- Named SA case studies on `/plans` — highest-leverage open item; price rises carry bounce risk without a trust signal.
+- Disable the Google OAuth provider in Supabase (unused but still enabled server-side).
+- Orphaned `profiles` table + old user accounts — decide whether to clean up.
+- Is the ~1.2 MB shader hero worth it on SA mobile data? Never measured on a real device.
+- Add typescript-eslint so lint covers `.tsx` again.
 
 ---
 
-## Runway (personal repo: `~/Claude/Projects/runway`)
+## Zanovo Dashboard (`~/Claude/Projects/zanovo-dashboard`) — internal CRM
 
-TK's strict personal budgeting iPhone app. Scaffolded + committed (commit `24b05ad`).
+**Separate repo. Do not mix into the marketing site.** One Expo codebase targets iOS *and* web (locked decision). Web = left sidebar (`app-tabs.web.tsx`), native = bottom tabs (`app-tabs.tsx`). Home screen has a platform split: `index.web.tsx` and `index.tsx`.
 
 ### Facts
 
-- **Stack:** Expo iPhone app, **local-only SQLite**, no cloud. Mirrors the zanovo-dashboard Expo conventions (same sideload pipeline).
-- **Core model:** hard-locked envelopes — payday auto-split (fixed → percent → remainder rules); an empty envelope **refuses** planned spends; moving money requires a logged reason (append-only override ledger). Actuals are never blocked by the lock (reconciliation settles planned spends to actual, else writes an unplanned spend).
-- **Bank parsers:** `sniffParser()` dispatches to FNB + Nedbank/Discovery. Discovery statements arrive as **text-layer PDFs** (no OCR needed) — parsed by reconstructing the table from text positions via pdf.js inside a hidden WebView; pure parsing logic is unit-tested (9 tests) against a real statement. FNB target was CSV.
-- **Payslip upload** (Income screen): reads a PDF on-device, scans for net-pay terminology across payroll systems (confirmed SimplePay "NETT PAY"; also "Net Pay"/"Take Home Pay"), pre-fills an editable amount. Extended to pull **gross, tax (PAYE), UIF, net** independently, guarded to take the *employee's* UIF line not the employer's. `payslip_history` table logs every upload (informational; never touches the split).
-- Tabs: Calendar (home, forecast banner: "Storm Warning"/"Clear Skies"), Envelopes, Subscriptions, Income, plus day-detail. Rides the same Sun/Wed 12:00 cert-refresh schedule as Rync + dashboard once installed.
+- **Supabase project `rvaxrzewjikepmmlwxra`** (shared with the marketing site's `transactions` / `profiles`). Owner-scoped RLS everywhere; shared-workspace RBAC via `org_members` (admin / member, plus `full_dashboard_access`).
+- **Login:** `thabiso@zanovo.co.za`. Password is *not* recorded here — get it from Supabase → Authentication. (An earlier version of this file held it in plaintext and is in git history; it needs rotating.)
+- **Live at https://app.zanovo.co.za.** No git remote on this repo — it deploys by **Vercel CLI**, not by git push. `master` is the main branch.
+- **MRR = won-deal retainers + active care plans.** `deals.monthly_retainer` (migration 0014) carries a deal's recurring fee and counts only while `stage = 'won'`; care plans keep their own line. Helpers in `src/lib/crm.ts`: `dealsMRR`, `carePlansMRR`, `totalMRR`, `mrrBreakdown`. Build-package retainers mirror the marketing repo's `plans.js` as `PACKAGE_RETAINERS`.
+- **Package tiers are editable after creation** — on deals (drawer chip row) and on care clients ("Change plan"). Changing a tier re-derives the price from list price *only* when it wasn't hand-overridden (`isListRetainer`).
+- **Realtime:** migration 0015 added `deals`, `contacts`, `care_plans` to the publication (0013 had `leads`, `master_leads`, `daily_reports`, `site_health`). Both home screens subscribe via `useRealtimeRefresh`, so won deals and manually added leads redraw without a refresh. RLS still governs visibility.
+- **Push is iOS-only** (accepted). `send-push` edge function is live; `SEND_PUSH_SECRET` must be set as an Edge Function secret.
+- **Site health:** `sites` + `site_health` (per-site). "Check now" in the app is a browser fetch with `mode: 'no-cors'` — it can only tell you something responded, status code comes back null. The GitHub Actions cron is the real server-side check.
 
-### Decisions
+### Direction
 
-- Build the testable pure-logic engines first; keep react-native imports out of the vitest target so business logic stays pure.
-- Don't guess bank/payslip layouts — build parsers only against real redacted samples.
+"Agency Command Center", not a pure sales CRM: **Acquire** (leads + pipeline) → **Deliver** (the build) → **Retain** (care plans, site health, traffic). A "client" is a contact with an active care plan. Maintenance-due tracking stays front and centre. Single-user-ish; no multi-tenant over-build.
 
-### Action items / status
+### Deploy runbook
 
-- **Blocked earlier on real statement samples;** Discovery PDF parser now built against a real statement. WebView/pdf.js extraction plumbing still needs an on-device smoke test (couldn't verify from the session — no simulator).
-- Wire Runway into `~/ios-cert-refresh/refresh.sh` (done — Release config, `DEVELOPMENT_TEAM=FQ24Q6UYMV`, installs via `devicectl`) so it rebuilds Sun/Wed with the others after first manual install.
+```
+cd ~/Claude/Projects/zanovo-dashboard
+npx vercel --prod --yes          # .vercelignore keeps this under the file limit
+```
 
-### Open questions
+- **`.vercelignore` is load-bearing.** Without it the upload is 18,967 files against Vercel's 15,000 limit and the deploy dies with `missing_archive` before building (`ios/` alone is ~9,500 files). If it ever regresses, `--archive=tgz` is the workaround.
+- **Local Vercel CLI is 54.0.0 and too old for `env` work** — it won't accept a value non-interactively. Use `npx vercel@latest` for env commands.
+- **Sensitive env vars cannot be copied.** `vercel env pull` returns empty strings for them, so Production values can't be cloned into Preview by script — TK must set them by hand (or edit the existing row and tick Preview; adding a *duplicate* name silently fails).
+- Env vars needed in both Production and Preview: `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`.
 
-- FNB export format — if FNB offers OFX/QIF, prefer that over CSV (structured, more reliable to parse).
+### iPhone install runbook (no simulator)
+
+`~/ios-cert-refresh/refresh.sh` rebuilds and reinstalls Rync + Zanovo Dashboard + Runway on the paired iPhone, Sun/Wed 12:00 (free Apple ID = 7-day cert). To push just the dashboard, by hand:
+
+```
+xcodebuild -workspace ios/ZanovoDashboard.xcworkspace -scheme ZanovoDashboard \
+  -configuration Release -destination "id=<device-id>" -allowProvisioningUpdates \
+  -derivedDataPath "$HOME/Library/Developer/ios-cert-refresh/ZanovoDashboard" \
+  DEVELOPMENT_TEAM=FQ24Q6UYMV build
+xcrun devicectl device install app --device <device-id> <path-to>/ZanovoDashboard.app
+```
+
+- **`DEVELOPMENT_TEAM=FQ24Q6UYMV` is required** — without it the build fails with "Signing for ZanovoDashboard requires a development team" (exit 65).
+- Device id: `xcrun devicectl list devices` (device is "Tk iPhone").
+- **Build outside `~/Claude`** — it's a Google Drive mirrored folder and Drive corrupts Xcode's SQLite build DB mid-build. Hence the `derivedDataPath` above.
+- `refresh.sh` hard-skips outside 10:00–16:00 and rebuilds all three apps — call `xcodebuild` directly for a single app or an out-of-window push.
+- **Check the real exit code and the `.app` timestamp before installing.** A wrapper's exit status can read 0 while `xcodebuild` failed, and a stale bundle from a previous day will sit at the output path waiting to be shipped by mistake.
+
+### Open
+
+- Site-health cron says `*/5` but GitHub Actions actually delivers roughly hourly, irregularly — a site can be down an hour before it's recorded. Move to Vercel Cron / an external pinger / `pg_cron` if real 5-minute checks matter.
+- **No alerting.** The health endpoint computes `went_down` / `recovered` transitions and does nothing with them (`TODO` in `api/site-health-check.js`); `device_tokens` and `send-push` both exist, unconnected.
+- WordPress client sites need a WP-aware check: a cached homepage returns 200 while PHP/DB is broken. Check `/wp-json/` and assert the body, not just the status.
+- No UI for adding a site — `sites` rows are SQL-only, and an insert needs `owner_id` set explicitly.
+- "Convert to Contact" dedup when an incoming lead's email matches an existing contact: duplicate vs merge.
 
 ---
 
-## Happenin (personal repo: `~/Claude/Projects/happenin`)
+## Zanovo Automation Engine (`~/Claude/Projects/zanovo-automation`)
 
-All-events discovery app, pre-launch. **Rebranded 2026-07-09 from "CapePlug"** → Happenin.
-
-### Facts
-
-- **Positioning:** all-events (festivals, comedy, markets, day parties, club nights), **city-neutral brand that launches in Cape Town** — deliberately not nightlife-only and not SA-locked, for scaling. Tagline: "Everything happening, matched to you."
-- **Name/domains:** chose **Happenin** (dropped-'g', Gen-Z-native, echoes real speech; runner-up JoinPlans). `happenin.app` (primary) + `happenin.co.za` (launch market) both secured. Rule internalized: stop letting the bare `.com` gate a mobile-first brand — `.app` qualifies.
-- **App stack:** Expo SDK 54 (expo 54.0.36, RN 0.81.5, expo-router 6.0.24) + **NativeWind** (Tailwind) — TK explicitly wanted Tailwind though the dashboard doesn't use it. Brand color hot magenta **#FF1E7A**, full light/dark. Prototype runs with zero backend so it films cleanly for reels (`~/Claude/Projects/happenin/app`, `npm run web`).
-- **Revenue model:** affiliate — event detail shows price + "Book Now" opening an **external ticket link**, no in-app payment (example event R650).
-- **Backend:** Supabase table `happenin_waitlist` (RLS anon insert-only, 18+ constraint preserved). Real-app swap point documented in `app/src/lib/supabase-stub.ts` (mock data → age-gated RLS reads).
-- **App flow:** signup captures DOB (sets age tier). A resident/visitor gate comes first — "I live in Cape Town" → straight to feed; "I'm visiting" → a visitor questionnaire (dates, party size, interests, plan-my-week option, WhatsApp contact).
-
-### Decisions
-
-- Coded prototype **is** the V1 foundation (zero throwaway) — chosen over Figma/XD/ProtoPie mockups. Use Figma only alongside code for visual exploration; skip Adobe XD (discontinued).
-- **Co-founder strategy** (doc `docs/08-cofounder-split.md`): split **demand vs. supply** (one owns audience/content, one owns venues); do **not** bring on a technical co-founder (product is the smallest engine). Non-negotiables: 4-year vesting w/ 1-year cliff; avoid reflexive 50/50 (TK originated idea, built prototype, owns brand/domains/funding → 60/40 or 70/30); split decision rights per domain; written founders' agreement + IP assignment reviewed by an actual attorney before either does a day of work; venue owners get exactly one point of contact. "Founding 50" program solves the "hands" problem at zero equity.
-
-### Action items / status
-
-- Prototype built, verified end-to-end (typecheck clean), committed. SDK 54 downgrade flushed out a real bug: `react-native-svg` was an undeclared transitive dep that lucide (all icons) needs — every icon would have crashed on device; now pinned.
-- **Parked (waiting on TK):** landing-page designs and promo pages/app prototypes — not built speculatively. When resuming, TK to decide: one landing page or A/B variants; clickable web mockup vs. static carousel frames.
-- Native iOS Simulator builds deferred to **after midnight** per the machine rule.
+- **n8n** inbound-intake / outbound-preview pipeline, Docker + Cloudflare tunnel. Writes lead matches to Supabase; workflow items carry a `kind` of `patch`/`candidate`.
+- **DNS trap:** `zanovo.co.za` nameservers point at Vercel, so `automation.zanovo.co.za` is intercepted by Vercel's edge (`DEPLOYMENT_NOT_FOUND`) before it reaches the tunnel.
+- Debugging: a node with a single green tick usually means someone ran "Test step" in isolation, not the whole chain from the trigger.
+- Status: scaffolded, blocked on API keys.
 
 ---
 
-## South Central (client WordPress site — `south-central.co.za`)
+## Runway (`~/Claude/Projects/runway`) — personal budgeting iPhone app
 
-Client business-directory site. Zanovo maintains it. **No local project** — edited live via WordPress admin (Customizer Additional CSS, Site Editor, WPCode, or REST API).
-
-> Note: `southcentralbiz.com` is a *separate* related site (Pagelayer/PopularFX theme) used as a reference for the footer; `south-central.co.za` is the live Gutenberg block site being maintained.
-
-### Facts
-
-- **Build:** WordPress block editor (Gutenberg) — `wp-block-group`, `wp-block-columns`, `wp-block-column`, etc. Spacing presets: `--wp--preset--spacing--80` ≈ 5.06rem (~81px), `--...--50` ≈ 1.5rem (~24px).
-- **Plugins:** WPForms, **AccelerateWP** (the only cache plugin — the "rocket" text seen is AccelerateWP's internal library, *not* a second WP Rocket install), WPCode, Site Kit by Google, Spectra (UAGB). Server is LiteSpeed, no Cloudflare.
-- **Directory:** 12 category tiles = manually-placed blocks (heading + linked image), 3 rows of 4. No auto-alphabetize — reorder via List View drag. 56 directory images total.
-- **Footer:** carries a Zanovo "WEBSITE MAINTAINED BY ▼ ZANOVO" bar (black background, right-aligned, above the grey "Powered by LOVE" bar, links to zanovo.co.za) + clickable tel/mailto contacts — copied to match southcentralbiz.com. Wrap-safe (`flex-wrap`, 40px black strip, eager-loaded logos).
-
-### Decisions / lessons
-
-- **Caching is the recurring gotcha:** after *every* footer/CSS edit, purge via **AccelerateWP → Clear and Preload Cache** — stale cache repeatedly made correct changes look broken (the footer bar "not showing" was pure cache, content was always saved correctly).
-- **Do NOT combine JS/CSS** — on HTTP/3 with many plugins (Elementor, Spectra, sliders, forms) it's high-risk for near-zero gain. Enabled the other safe AccelerateWP optimizations (Defer JS, etc.); they were all previously off (basic page caching only).
-- Scope CSS by page context: the homepage hero needs `.wp-block-cover { min-height: 45vh }`, but interior banners (e.g. `/motivation`) don't — use `body.home` / `body:not(.home)`.
-
-### Action items / status
-
-- **Left on the table (TK's call):** hero image is a 328KB PNG (`banner-image.png`) — converting to WebP/JPG cuts ~70%; AccelerateWP's auto image optimization is a **paid** upgrade so this is best done by hand.
-- 90 JS + 43 CSS files load un-combined; combining is intentionally declined (see decision above).
-- WordPress admin **session keeps expiring** mid-task — Claude can't enter passwords, so TK must re-login before Customizer/Site-Editor edits.
+- Expo, **local-only SQLite, no cloud**. Same sideload pipeline as the dashboard.
+- **Hard-locked envelopes:** payday auto-split (fixed → percent → remainder); an empty envelope *refuses* a planned spend; moving money needs a logged reason (append-only override ledger). Actuals are never blocked — reconciliation settles planned spends to actual or writes an unplanned one.
+- **Parsers:** `sniffParser()` → FNB + Nedbank/Discovery. Discovery statements are text-layer PDFs (no OCR), parsed by rebuilding the table from text positions via pdf.js in a hidden WebView; pure logic unit-tested (9 tests) against a real statement.
+- **Payslip upload** reads a PDF on-device, finds net pay across payroll systems (SimplePay "NETT PAY", "Net Pay", "Take Home Pay"), pulls gross/PAYE/UIF/net, taking the *employee's* UIF line. `payslip_history` logs uploads; never touches the split.
+- Tabs: Calendar (forecast banner "Storm Warning"/"Clear Skies"), Envelopes, Subscriptions, Income, day detail.
+- Rules: build testable pure-logic engines first, keep react-native imports out of the vitest target; never guess bank/payslip layouts — parse only against real redacted samples.
+- Open: WebView/pdf.js extraction still needs an on-device smoke test. If FNB offers OFX/QIF, prefer it over CSV.
 
 ---
 
-## Overflow Church (client site — `~/Claude/Projects/OverflowChurch`)
+## Happenin (`~/Claude/Projects/happenin`) — all-events discovery app, pre-launch
 
-Rebuilt marketing site for Overflow Church, Fish Hoek, Cape Town. A React rebuild of their old Wix site, adapted from the Zanovo site template.
-
-### Facts
-
-- **Stack:** Vite + React 19 + Framer Motion (replacing the old Wix bundle/scroll-hijack). Tokens live in `src/tokens.js`.
-- **Brand/design:** light cream `#F8F5EF` background (matches original beige); rose `#E11D48` accent kept for links/brand; **slate-grey gradient** (`#94A3B8 → #475569`) logo + "CHURCH" wordmark; "OVERFLOW CHURCH" set in the **Righteous** typeface (art-deco, matches original logo). Logo mark = two crescent arcs forming an O.
-- **Sections (replaced Zanovo's Pain/Services/Process/Pricing):** About/"Our Story" (Pastor Ryan & Tammy; 2019 → "Fullies" → renamed Overflow Church **Feb 2023**; John 7:37–38), Alpha, Church Life, Give, Contact. Tagline: "We are the church that overflows in God's Love, His Grace & in His Power." Values: LOVE · GRACE · POWER.
-- **Church Life:** 7-day calendar grid (Sun–Sat) with the real schedule (Sunday Service 09:00; Mon Prayer Night 18:30; Life Groups Tue/Wed/Thu 19:00; etc.); events are clickable → pre-filled Google Calendar "add event" links. Auto-rotating slideshow (6s) replaced the "Plan a Visit" pink block.
-- **Give page** (replaces checkout): EFT bank details with click-to-copy, plus QR/other methods — **placeholder** account `62XXXXXXXXX` + FNB Fish Hoek (250655) as a guess.
-- Contact: WhatsApp as primary CTA + Facebook/Instagram/YouTube social icons (URLs in `CHURCH.socials`).
-- **Deliverables produced:** a Before → After redesign PDF (9 pages, 5.8MB) and an editable DOCX, both saved to `~/Desktop/Overflow Church/`.
-
-### Action items / status
-
-- **Before going live:** replace the placeholder bank details in `src/tokens.js` with the church's real banking info. Swap in real Overflow Church photos (`STORY_PHOTOS`, `SLIDES` in `tokens.js`).
-
-### Open questions
-
-- Real banking details and real photography still outstanding.
+- Rebranded from "CapePlug" 2026-07-09. **City-neutral brand launching in Cape Town**, all events (festivals, comedy, markets, day parties, club nights) — deliberately not nightlife-only, not SA-locked. Tagline: "Everything happening, matched to you."
+- Domains `happenin.app` (primary) + `happenin.co.za`. Rule learned: a bare `.com` doesn't gate a mobile-first brand.
+- **Stack:** Expo SDK 54 + **NativeWind** (TK wanted Tailwind, unlike the dashboard). Brand hot magenta **#FF1E7A**, full light/dark. Prototype runs with zero backend so it films cleanly for reels (`app/`, `npm run web`).
+- **Revenue: affiliate** — event detail shows price + "Book Now" to an external ticket link, no in-app payment.
+- Backend: Supabase `happenin_waitlist` (anon insert-only RLS, 18+ constraint). Swap point documented in `app/src/lib/supabase-stub.ts`.
+- Flow: signup captures DOB (age tier); resident/visitor gate first — residents go to the feed, visitors get a questionnaire (dates, party size, interests, plan-my-week, WhatsApp).
+- **Decisions:** the coded prototype *is* the V1 foundation (no throwaway mockups). Co-founder split is **demand vs supply**, not technical; 4-year vest / 1-year cliff; avoid reflexive 50/50 (TK originated it, built it, owns brand + domains + funding); written founders' agreement + IP assignment reviewed by an attorney before either party works a day.
+- Real bug worth remembering: `react-native-svg` was an undeclared transitive dep that lucide needs — every icon would have crashed on device. Now pinned.
+- **Parked pending TK:** landing-page designs and promo pages — not to be built speculatively.
 
 ---
 
-## Rync (personal iOS app — built as `HyroxStrength`)
+## South Central (`south-central.co.za`) — client WordPress site
 
-TK's hybrid-fitness iPhone app (strength + HYROX + cardio/running + nutrition). **Renamed HyroxStrength → Rync** mid-project.
+No local project; edited live via WP admin (Customizer CSS, Site Editor, WPCode, REST API). `southcentralbiz.com` is a *separate* related site used only as a footer reference.
 
-### Facts
+- Gutenberg block build. Spacing presets: `--wp--preset--spacing--80` ≈ 5.06rem, `--50` ≈ 1.5rem. Plugins: WPForms, **AccelerateWP** (the only cache plugin — its internal "rocket" library is not a second WP Rocket), WPCode, Site Kit, Spectra. LiteSpeed server, no Cloudflare.
+- Directory: 12 category tiles as manually-placed blocks, 3 rows of 4, reordered by List View drag. 56 directory images.
+- Footer carries the Zanovo "WEBSITE MAINTAINED BY ▼ ZANOVO" bar + clickable tel/mailto, wrap-safe.
+- **The recurring trap: caching.** After *every* CSS/footer edit, purge via AccelerateWP → Clear and Preload Cache. Stale cache has repeatedly made correct changes look broken.
+- **Do not combine JS/CSS** — HTTP/3 plus many plugins makes it high-risk for near-zero gain. Other safe optimizations (Defer JS etc.) are on.
+- Scope CSS by page context (`body.home` vs `body:not(.home)`).
+- Open: hero is a 328KB PNG; WebP/JPG would cut ~70%, and AccelerateWP's auto image optimization is paid, so do it by hand. WP admin sessions keep expiring — Claude can't enter passwords, so TK must re-login first.
 
-- **Stack:** native Xcode (SwiftUI, SwiftData), hand-generated `project.pbxproj` via `generate_project.py` (no Swift Package Manager). Scheme `HyroxStrength`, signing team `FQ24Q6UYMV`, **bundle ID `com.tkmolekwa.HyroxStrength` (kept unchanged** through the rename so data + Supabase config survive; SwiftData automatic lightweight migration preserves existing data).
-- **Rename:** only user-facing strings changed (CFBundleDisplayName, permission strings, PrivacyOverlay, DataExporter, userAgent); internal IDs untouched. The rename **also resolved the biggest legal risk** — the name no longer contains "HYROX" (now only descriptive/nominative use with a non-affiliation disclaimer).
-- **Backend:** Supabase (project `https://uhxtbahzsjrlfispdqps.supabase.co`) via **dependency-free hand-rolled clients** over URLSession (chosen over `supabase-swift` because of the generated pbxproj): `SupabaseAuthService` (GoTrue REST), `SupabasePostgrestClient` (PostgREST), `SyncEngine` (push dirty → pull since watermark → last-write-wins). Tokens in iOS **Keychain**; ATS `NSAllowsArbitraryLoads=false`.
-- **Schema:** `0001_initial_schema.sql` = 17 tables, **RLS on every one**, owner-only CRUD, auto-profile trigger. `0002_account_deletion.sql` = `delete_my_account()` SECURITY DEFINER RPC (Apple-required in-app account deletion, cascades to all user data). Applied via SQL Editor (app only carries the publishable key, which can't run DDL — the security boundary working as intended).
-- **Health/fitness:** HealthKit as source (steps live via `HKObserverQuery`; sleep/recovery are **computed estimates**, labeled "est.", via `ReadinessCalculator`). Live cardio = full GPS/pace/distance on phone; live HR only real with a paired Apple Watch (iPhone has no HR sensor) or a BLE HR strap (service 0x180D). `GoalPlanner` = pure Mifflin–St Jeor TDEE → recommended **calories + macros + weekly cardio only, never food advice**; fully editable, non-medical disclaimer. Nutrition search (OpenFoodFacts) prioritizes English + user's country.
-- **Legal docs:** full set tailored to Rync, POPIA + GDPR compliant (privacy, ToS, health disclaimer, copyright/IP, app-privacy nutrition label). 6-doc "vibecoding" pack + backend/security architecture doc + a 50-point vulnerability audit (36 ✅ / 10 🟡 / 6 ⬜).
-- **Brand:** final app icon = glowing lowercase **"rync"** in Libre Baskerville, white letters + blue aura (`#2E9BFF`/`#6CC8FF`) on off-black, flattened opaque 1024×1024 (App Store rejects transparency). Design assets in `FitnessApp/design/rync-glow/`.
+---
 
-### Decisions (locked, do not silently re-open)
+## Overflow Church (`~/Claude/Projects/OverflowChurch`) — client site
 
-- **Supabase** backend; cloud sync + social + AI coaching; email/password + 2FA; **free at launch** (schema future-proofed for a Pro tier). Dependency-free clients over the SDK. Never test in the simulator — **TK reports issues from the app on his phone.**
+React rebuild of a Wix site, adapted from the Zanovo template. Fish Hoek, Cape Town.
 
-### Security constraints (must persist)
+- Vite + React 19 + Framer Motion. Tokens in `src/tokens.js`.
+- Cream `#F8F5EF` background, rose `#E11D48` accent, slate-grey gradient (`#94A3B8 → #475569`) logo + wordmark, "OVERFLOW CHURCH" in **Righteous**. Logo = two crescent arcs forming an O.
+- Sections: About/"Our Story" (Pastor Ryan & Tammy; 2019 → "Fullies" → renamed Overflow Church Feb 2023; John 7:37–38), Alpha, Church Life, Give, Contact. Values: LOVE · GRACE · POWER.
+- Church Life: 7-day calendar with the real schedule (Sunday service 09:00, Mon prayer 18:30, life groups Tue/Wed/Thu 19:00), events link to pre-filled Google Calendar adds. Auto-rotating slideshow (6s).
+- Give page: EFT details with click-to-copy.
+- **Before going live:** the bank details in `src/tokens.js` are a **placeholder guess** (`62XXXXXXXXX`, FNB Fish Hoek 250655) and must be replaced with the church's real details. Real photos still needed (`STORY_PHOTOS`, `SLIDES`).
 
-- **Never put the Supabase service-role/secret key in the app** — only the publishable/anon key (public, guarded by RLS) belongs in Info.plist. TK once pasted a `sb_secret_...` key in chat; it was **refused, flagged as compromised, and must be rotated.** The correct `sb_publishable_...` key was then used.
+---
 
-### Action items / status
+## Rync (`~/Dev (Code & Tools)/.../FitnessApp`) — personal iOS app, builds as `HyroxStrength`
 
-- Both SQL migrations (`0001`, `0002`) to be run in the Supabase SQL Editor.
-- Dashboard settings still owed on Supabase: enable **leaked-password protection** + CAPTCHA; tune login rate limits. Add RLS-denial tests + a pen-test before launch.
-- Installs to TK's iPhone on the automatic **Sun/Wed 12:00** launchd cert-refresh schedule (free Apple ID 7-day cert), 11:50 heads-up notification, rebuilds strictly 10:00–16:00. One trust-per-Apple-ID covers Rync + Zanovo Dashboard + Runway.
+Hybrid fitness (strength + HYROX + cardio + nutrition). Renamed HyroxStrength → Rync mid-project.
 
-### Open questions
-
-- Timing of "Sign in with Apple" (App Store requires it once any social login ships); coach/multi-athlete role spec; leaderboard fairness rule.
+- **Native Xcode** (SwiftUI, SwiftData), hand-generated `project.pbxproj` via `generate_project.py`, no SPM. Scheme `HyroxStrength`, team `FQ24Q6UYMV`, **bundle ID `com.tkmolekwa.HyroxStrength` kept unchanged** through the rename so data and config survive.
+- The rename also removed the biggest legal risk — the name no longer contains "HYROX" (now nominative use with a non-affiliation disclaimer).
+- **Backend:** Supabase `uhxtbahzsjrlfispdqps`, via dependency-free hand-rolled URLSession clients (`SupabaseAuthService`, `SupabasePostgrestClient`, `SyncEngine` — push dirty → pull since watermark → last-write-wins). Tokens in Keychain; ATS `NSAllowsArbitraryLoads=false`.
+- **Schema:** `0001_initial_schema.sql` (17 tables, RLS on every one, owner-only CRUD, auto-profile trigger) and `0002_account_deletion.sql` (`delete_my_account()` SECURITY DEFINER RPC, Apple-required). Applied via SQL Editor — the app only carries the publishable key and can't run DDL, which is the security boundary working.
+- HealthKit is the source; sleep/recovery are **computed estimates**, labelled "est.". Live HR needs an Apple Watch or a BLE strap (0x180D) — the iPhone has no HR sensor. `GoalPlanner` gives calories + macros + weekly cardio only, **never food advice**, fully editable, non-medical disclaimer.
+- **Locked, do not silently re-open:** Supabase backend; cloud sync + social + AI coaching; email/password + 2FA; free at launch. **Never test in the simulator — TK reports issues from the app on his phone.**
+- **Security constraint that must persist:** only the publishable/anon key goes in the app, never the service-role key. TK once pasted an `sb_secret_...` key in chat; it was refused and flagged as compromised — **it must be rotated.**
+- Open: timing of "Sign in with Apple" (required once any social login ships); Supabase dashboard still owes leaked-password protection + CAPTCHA + rate-limit tuning; RLS-denial tests and a pen-test before launch.

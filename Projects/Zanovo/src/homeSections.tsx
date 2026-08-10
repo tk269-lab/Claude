@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { EASE, OrangeButton } from './site'
+import { ImageWithSkeleton } from './Skeleton'
 import { PHONE_COUNTRY_OPTIONS } from './lib/phoneIntl.js'
 import { getSupabaseFunctionHeaders } from './lib/supabaseFunctions.js'
 import { nationalToE164 } from './lib/phoneIntl.js'
@@ -66,15 +67,25 @@ export function PainSection() {
             <OrangeButton href="#services">How we close the gap</OrangeButton>
           </div>
           <div className="mt-8 flex flex-col sm:flex-row gap-4 sm:gap-5">
-            <img src={SMALL_IMG} alt={SMALL_ALT} loading="lazy" className="sm:w-[45%] w-full aspect-[438/346] object-cover rounded-xl sm:rounded-2xl" />
-            <img src={LARGE_IMG} alt={LARGE_ALT} loading="lazy" className="sm:w-[55%] w-full aspect-[900/600] object-cover rounded-xl sm:rounded-2xl" />
+            <ImageWithSkeleton
+              src={SMALL_IMG}
+              alt={SMALL_ALT}
+              wrapperClassName="sm:w-[45%] w-full aspect-[438/346] rounded-xl sm:rounded-2xl"
+              className="w-full h-full object-cover"
+            />
+            <ImageWithSkeleton
+              src={LARGE_IMG}
+              alt={LARGE_ALT}
+              wrapperClassName="sm:w-[55%] w-full aspect-[900/600] rounded-xl sm:rounded-2xl"
+              className="w-full h-full object-cover"
+            />
           </div>
         </div>
 
         {/* Desktop grid */}
         <div className="hidden lg:grid grid-cols-[26%_1fr_48%] items-end gap-6 xl:gap-8 px-12">
           <div className="self-end overflow-hidden rounded-2xl h-[300px]">
-            <img src={SMALL_IMG} alt={SMALL_ALT} loading="lazy" className="w-full h-full object-cover" />
+            <ImageWithSkeleton src={SMALL_IMG} alt={SMALL_ALT} wrapperClassName="w-full h-full" className="w-full h-full object-cover" />
           </div>
           <div className="self-start flex flex-col items-end justify-end text-right">
             <p className="text-[16px] xl:text-[18px] leading-[1.65] font-medium text-gray-900 max-w-[360px]">
@@ -86,7 +97,7 @@ export function PainSection() {
             </div>
           </div>
           <div className="self-end overflow-hidden rounded-2xl h-[300px]">
-            <img src={LARGE_IMG} alt={LARGE_ALT} loading="lazy" className="w-full h-full object-cover" />
+            <ImageWithSkeleton src={LARGE_IMG} alt={LARGE_ALT} wrapperClassName="w-full h-full" className="w-full h-full object-cover" />
           </div>
         </div>
       </div>

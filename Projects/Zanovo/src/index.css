@@ -17,3 +17,32 @@ html {
 .grecaptcha-badge:hover {
   width: 256px !important;
 }
+
+/* Skeleton shimmer — shared with the dashboard and Runway apps.
+   Base is the resting block, the sweep is a white gradient crossing it. */
+.zk-shimmer {
+  position: relative;
+  overflow: hidden;
+  background-color: #e5e3de;
+}
+.zk-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.65), transparent);
+  animation: zk-sweep 1.4s linear infinite;
+}
+/* A full-width shimmer is a common migraine and vestibular trigger, so it
+   stops sweeping when the visitor asks for reduced motion. The block stays. */
+@media (prefers-reduced-motion: reduce) {
+  .zk-shimmer::after {
+    animation: none;
+    background: none;
+  }
+}
+@keyframes zk-sweep {
+  100% {
+    transform: translateX(100%);
+  }
+}
