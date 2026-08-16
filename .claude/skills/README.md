@@ -35,6 +35,12 @@ above and nothing else.
 - `i-have-adhd/` — output shaping: action-first, numbered steps, no preamble. From
   github.com/ayghri/i-have-adhd (MIT). Moved here from `Projects/Zanovo/.claude/skills/`
   so it applies repo-wide.
+- `verify-research/` — fact-checks research before it is trusted or sent to a client.
+  Enforces three *independent* confirmations on load-bearing claims and produces a
+  rewritten version containing only what survived.
+- `watch/` — monitors a target over time and reports only meaningful change. Holds
+  baselines in `.claude/watches/` (gitignored). Needs a runner: `/loop` for the life
+  of a session, GitHub Actions cron for anything permanent.
 
 ## Personal skills vs repo skills
 

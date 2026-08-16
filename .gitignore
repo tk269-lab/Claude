@@ -33,3 +33,6 @@ Zanovo analytics/
 Zanovo branding kit copy/
 Projects/my-videos/
 Projects/zanovo-video/
+
+# Claude Code watch state (local baselines, not source)
+.claude/watches/
