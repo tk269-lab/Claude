@@ -16,7 +16,7 @@ Before answering, work out which project the request is about and **read the mat
 - `api/site-health-check.js` — Vercel function hit by a GitHub Actions cron that watches site health.
 - `supabase/` — migrations and edge functions. Project keys go in `.env` (copy `.env.example`); never commit keys.
 - `content-pipeline/` — SQLite-backed social content system (ideas → review → drafts → approve). Driven by the `/pulse`, `/review`, `/generate-content`, `/approve` skills; scripts also runnable via `npm run discover|review|generate|approve|list|sync-posted` from `content-pipeline/`.
-- `.claude/skills/` — vendored third-party skills (apify-ultimate-scraper, humanizer, nano-banana, postiz, supadata, i-have-adhd). Do not edit vendored skill internals casually; supadata is Zanovo-customized. `i-have-adhd` (from github.com/ayghri/i-have-adhd, MIT) shapes output to be action-first: lead with the next action, number steps, no preamble/closers.
+- `.claude/skills/` — vendored third-party skills (apify-ultimate-scraper, humanizer, nano-banana, postiz, supadata). Do not edit vendored skill internals casually; supadata is Zanovo-customized. `i-have-adhd` moved up to the repo-root `.claude/skills/` so it loads for every session in this repo, not only ones opened inside `Projects/Zanovo`; see `.claude/skills/README.md`.
 - `outputs/`, `analytics-reports/`, `security-report/` — generated artifacts, not source.
 
 ## Commands
