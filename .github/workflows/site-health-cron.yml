@@ -11,5 +11,13 @@ jobs:
     steps:
       - name: Call health check endpoint
         run: |
-          curl -sf -X GET "https://www.zanovo.co.za/api/site-health-check" \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
+          status=$(curl -s -o /tmp/response.txt -w "%{http_code}" -X GET \
+            "https://www.zanovo.co.za/api/site-health-check" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}")
+          echo "HTTP $status"
+          cat /tmp/response.txt
+          echo
+          if [ "$status" != "200" ]; then
+            echo "::error::site-health-check endpoint returned HTTP $status"
+            exit 1
+          fi
