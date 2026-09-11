@@ -17,7 +17,7 @@ export const config = { runtime: 'nodejs' };
 
 const CHECK_TIMEOUT_MS = 10_000;
 
-export default async function handler(req) {
+export async function GET(req) {
   const authHeader = req.headers.get('authorization');
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return new Response('Unauthorized', { status: 401 });
