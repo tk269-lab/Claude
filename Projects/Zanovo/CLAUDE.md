@@ -1,6 +1,6 @@
 # Zanovo — marketing site + content pipeline
 
-Live site www.zanovo.co.za: AI-powered websites, lead capture and automation for South African small businesses. Project facts, prices and open items are in `context.md` (Zanovo section by default; other projects have their own sections there but separate repos, listed at the bottom).
+Live site www.zanovo.co.za: AI-powered websites, lead capture and automation for South African small businesses. Prices, routes and open items are in `context.md`; read it when the task needs them.
 
 ## Layout
 
