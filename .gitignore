@@ -33,3 +33,7 @@ Zanovo analytics/
 Zanovo branding kit copy/
 Projects/my-videos/
 Projects/zanovo-video/
+
+# /ship agent scratch (planner/coder/tester/reviewer handoff files)
+.pipeline/
+**/.pipeline/
