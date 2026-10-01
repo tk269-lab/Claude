@@ -55,9 +55,24 @@ def rows_from_grid(grid):
     return []
 
 
+FILLER = {"yes", "no", "please"}
+
+
 def normalise(name):
-    name = unicodedata.normalize("NFKD", name or "").encode("ascii", "ignore").decode()
-    return re.sub(r"[^a-z ]", " ", name.lower()).split()
+    name = re.sub(r"['’‘`]", "", name or "")  # O'Flaherty -> oflaherty, on both sides
+    name = unicodedata.normalize("NFKD", name).encode("ascii", "ignore").decode()
+    return [t for t in re.sub(r"[^a-z ]", " ", name.lower()).split() if t not in FILLER]
+
+
+def split_people(raw):
+    """'YES - A B, C D and E F' -> ['A B', 'C D', 'E F']."""
+    parts = re.split(r",|;|&|/|\band\b|\n", raw or "", flags=re.I)
+    people = []
+    for p in parts:
+        tokens = normalise(p)
+        if tokens:
+            people.append(" ".join(t.capitalize() for t in tokens))
+    return people
 
 
 def find_col(headers, *patterns, exclude=()):
@@ -96,6 +111,10 @@ def match(form_tokens, db_entries):
         # First and last word of the submitted name both appear: handles middle names and order.
         if form_tokens[0] in tokens and form_tokens[-1] in tokens:
             return "exact", name
+        # Same surname, first name starts with the same letter (Nick / Nicholas, Rob / Robert).
+        if form_tokens[-1] in tokens and any(t[0] == form_tokens[0][0] and t != form_tokens[-1] for t in tokens):
+            best, best_name = 1.0, name
+            continue
         score = SequenceMatcher(None, joined, " ".join(sorted(tokens))).ratio()
         if score > best:
             best, best_name = score, name
@@ -137,54 +156,56 @@ def main():
         if key not in seen:
             new.append([raw, ts, pres])
             seen.add(key)
+        # A bare "YES" with no name yields no people: not a guest list request.
+        for name in split_people(raw):
+            reason, found, fuzzy = check_person(name, dbs, args.exclude_if, used)
+            if reason:
+                excluded.append([name, raw, ts, reason])
+                continue
+            kept.append([name, ts, pres, found or "Close match only"])
+            if fuzzy:
+                check.append([name, ts, fuzzy])
 
-        tokens = normalise(raw)
-        if not tokens:
-            continue  # answered the pres question only; not a guest list request
-        if len(tokens) < 2:
-            excluded.append([raw, ts, "Only one name given, cannot verify"])
-            continue
-        dedupe = " ".join(sorted(tokens))
-        if dedupe in used:
-            excluded.append([raw, ts, "Duplicate sign-up"])
-            continue
-        used.add(dedupe)
+    write_xlsx(Path(args.out), kept, excluded, check, new)
+    state_path.write_text(json.dumps(sorted(seen)))
+    print(f"Responses: {len(responses)} | New: {len(new)} | Kept: {len(kept)} | "
+          f"Excluded: {len(excluded)} | Check manually: {len(check)}")
 
-        found, fuzzy = [], []
-        for label, entries in dbs.items():
-            kind, who = match(tokens, entries)
-            if kind == "exact":
-                found.append(label)
-            elif kind == "fuzzy":
-                fuzzy.append(f"{label}: {who}")
 
-        name = " ".join(t.capitalize() for t in raw.split())
-        if args.exclude_if == "not-found":
-            if found:
-                kept.append([name, ts, pres, ", ".join(found)])
-            elif fuzzy:
-                kept.append([name, ts, pres, "Close match only"])
-                check.append([name, ts, "; ".join(fuzzy)])
-            else:
-                excluded.append([raw, ts, "Not found in " + ", ".join(dbs) if dbs else "No database loaded"])
-        else:
-            if found:
-                excluded.append([raw, ts, "Already in " + ", ".join(found)])
-            else:
-                kept.append([name, ts, pres, ""])
-                if fuzzy:
-                    check.append([name, ts, "; ".join(fuzzy)])
+def check_person(name, dbs, exclude_if, used):
+    """Return (exclusion reason or None, found-in labels, fuzzy-match note)."""
+    tokens = normalise(name)
+    if len(tokens) < 2:
+        return "Only one name given, cannot verify", "", ""
+    key = " ".join(sorted(tokens))
+    if key in used:
+        return "Duplicate sign-up", "", ""
+    used.add(key)
 
-    out = Path(args.out)
+    found, fuzzy = [], []
+    for label, entries in dbs.items():
+        kind, who = match(tokens, entries)
+        if kind == "exact":
+            found.append(label)
+        elif kind == "fuzzy":
+            fuzzy.append(f"{label}: {who}")
+
+    if exclude_if == "not-found" and not found and not fuzzy:
+        return "Not found in " + ", ".join(dbs), "", ""
+    if exclude_if == "found" and found:
+        return "Already in " + ", ".join(found), "", ""
+    return None, ", ".join(found), "; ".join(fuzzy)
+
+
+def write_xlsx(out, kept, excluded, check, new):
     out.mkdir(parents=True, exist_ok=True)
-    stamp = datetime.now().strftime("%Y-%m-%d_%H%M")
-    xlsx = out / f"Halo_Guest_List_{stamp}.xlsx"
+    xlsx = out / f"Halo_Guest_List_{datetime.now().strftime('%Y-%m-%d_%H%M')}.xlsx"
     wb = Workbook()
     sheets = [
         ("Guest List", ["Name", "Signed up", "Attending pres", "Found in"], sorted(kept, key=lambda x: x[0].lower())),
-        ("Excluded", ["Name as submitted", "Signed up", "Reason"], excluded),
+        ("Excluded", ["Name", "Submitted as", "Signed up", "Reason"], excluded),
         ("Check Manually", ["Name", "Signed up", "Closest match"], check),
-        ("New Sign-ups", ["Name as submitted", "Signed up", "Attending pres"], new),
+        ("New Sign-ups", ["Submitted as", "Signed up", "Attending pres"], new),
     ]
     for i, (title, head, rows) in enumerate(sheets):
         ws = wb.active if i == 0 else wb.create_sheet()
@@ -199,10 +220,6 @@ def main():
         for col in ws.columns:
             ws.column_dimensions[col[0].column_letter].width = min(50, max(12, *(len(str(c.value or "")) + 2 for c in col)))
     wb.save(xlsx)
-    state_path.write_text(json.dumps(sorted(seen)))
-
-    print(f"Responses: {len(responses)} | New: {len(new)} | Kept: {len(kept)} | "
-          f"Excluded: {len(excluded)} | Check manually: {len(check)}")
     print(f"Saved: {xlsx}")
 
 

@@ -37,3 +37,4 @@ Projects/zanovo-video/
 # /ship agent scratch (planner/coder/tester/reviewer handoff files)
 .pipeline/
 **/.pipeline/
+GuestListOutput/
