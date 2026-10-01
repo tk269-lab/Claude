@@ -56,6 +56,7 @@ def rows_from_grid(grid):
 
 
 FILLER = {"yes", "no", "please"}
+SURNAME_PARTICLES = {"van", "von", "de", "der", "den", "du", "le", "la", "st", "mc", "mac"}
 
 
 def normalise(name):
@@ -112,7 +113,11 @@ def match(form_tokens, db_entries):
         if form_tokens[0] in tokens and form_tokens[-1] in tokens:
             return "exact", name
         # Same surname, first name starts with the same letter (Nick / Nicholas, Rob / Robert).
-        if form_tokens[-1] in tokens and any(t[0] == form_tokens[0][0] and t != form_tokens[-1] for t in tokens):
+        # Or they also typed a middle name they go by (Stephen Ben van Niekerk / Ben van Niekerk).
+        if form_tokens[-1] in tokens and (
+            any(t[0] == form_tokens[0][0] and t != form_tokens[-1] for t in tokens)
+            or any(t in tokens for t in form_tokens[1:-1] if t not in SURNAME_PARTICLES)
+        ):
             best, best_name = 1.0, name
             continue
         score = SequenceMatcher(None, joined, " ".join(sorted(tokens))).ratio()
