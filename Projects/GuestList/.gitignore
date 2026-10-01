@@ -1,0 +1,4 @@
+# Resident and guest data stays local, never in git
+*.csv
+*.xlsx
+state.json
