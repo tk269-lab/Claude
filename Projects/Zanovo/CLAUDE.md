@@ -19,7 +19,7 @@ Live site www.zanovo.co.za: AI-powered websites, lead capture and automation for
 ## Gotchas
 
 - The git root is `~/Claude` (a large personal folder with `.vercel/` secrets), not this folder. Stage specific files; never `git add -A`.
-- Hero shader uses WebGPU in a blob worker: keep the `navigator.gpu` fallback in `Home.tsx` (older SA Android/iOS), keep `worker-src 'self' blob:` in the CSP, and never call `getContext('webgl')` on that canvas to debug (it locks the context type and breaks the render loop).
+- Hero shader uses WebGPU in a blob worker: keep the `navigator.gpu` + `requestAdapter()` fallback in `Home.tsx` (older SA Android/iOS, and browsers that expose WebGPU without a usable adapter), keep `worker-src 'self' blob:` in the CSP, and never call `getContext('webgl')` on that canvas to debug (it locks the context type and breaks the render loop).
 - `vercel.json` excludes `/api/` from the SPA rewrite on purpose (commit 89d496a). Don't simplify the regex.
 - `main` auto-deploys to production. Manual deploys need `--cwd /Users/tk/Claude` (Vercel root is `Projects/Zanovo`).
 

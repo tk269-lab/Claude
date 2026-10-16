@@ -3,7 +3,6 @@ import { C, sectionTitle, body, list, h1Style, asideStyle, LegalShell } from './
 
 export default function PrivacyPolicyPage() {
   useEffect(() => {
-    document.title = 'Privacy Policy | Zanovo'
     window.scrollTo(0, 0)
   }, [])
 

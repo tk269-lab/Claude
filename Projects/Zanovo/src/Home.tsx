@@ -10,9 +10,26 @@ const HeroShader = lazy(() => import('./HeroShader'))
    where the shader would throw on every frame. Those visitors get a static
    painted gradient in the same palette instead. */
 function useSupportsShader() {
-  // Truthiness, not `'gpu' in navigator` — some browsers expose the key while
-  // leaving it undefined, and a disabled/absent adapter must take the fallback.
-  return useState(() => typeof navigator !== 'undefined' && Boolean((navigator as Navigator & { gpu?: unknown }).gpu))[0]
+  const [supported, setSupported] = useState(false)
+  useEffect(() => {
+    // Truthiness, not `'gpu' in navigator` — some browsers expose the key while
+    // leaving it undefined. navigator.gpu can also exist with no usable adapter
+    // (blocklisted GPUs, some Android builds), where the shader crashes, so ask
+    // for one before downloading the shader at all.
+    const gpu = (navigator as Navigator & { gpu?: { requestAdapter: () => Promise<unknown> } }).gpu
+    if (!gpu) return
+    let cancelled = false
+    gpu
+      .requestAdapter()
+      .then((adapter) => {
+        if (!cancelled && adapter) setSupported(true)
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [])
+  return supported
 }
 
 /* Static stand-in: the swirl's light base with the orange chroma bloom baked in. */
@@ -35,10 +52,6 @@ function StaticHeroBackdrop() {
 export default function Home() {
   const location = useLocation()
   const supportsShader = useSupportsShader()
-
-  useEffect(() => {
-    document.title = 'Web Design & Business Growth Solutions South Africa | Zanovo'
-  }, [])
 
   // Scroll to a section when arriving with a hash (e.g. /#contact from another page)
   useEffect(() => {

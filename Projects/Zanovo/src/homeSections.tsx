@@ -16,9 +16,8 @@ import {
 import { Link } from 'react-router-dom'
 import { EASE, OrangeButton } from './site'
 import { ImageWithSkeleton } from './Skeleton'
-import { PHONE_COUNTRY_OPTIONS } from './lib/phoneIntl.js'
+import { PHONE_COUNTRY_OPTIONS } from './lib/phoneCountries.js'
 import { getSupabaseFunctionHeaders } from './lib/supabaseFunctions.js'
-import { nationalToE164 } from './lib/phoneIntl.js'
 import {
   EMPTY_FORM,
   FIELD_LIMITS,
@@ -415,13 +414,14 @@ export function ContactSection() {
     setErrorMsg('')
 
     const lead = normalizeLead(form)
-    const validationError = validateLead(lead)
+    const validationError = await validateLead(lead)
     if (validationError) {
       setErrorMsg(validationError)
       setStatus('error')
       return
     }
 
+    const { nationalToE164 } = await import('./lib/phoneIntl.js')
     const phoneE164 = nationalToE164(lead.phone, lead.phoneCountry) ?? lead.phone
     const recaptchaToken = await getRecaptchaToken('submit_lead')
     if (RECAPTCHA_SITE_KEY && !recaptchaToken) {

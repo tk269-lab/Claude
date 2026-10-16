@@ -1,24 +1,8 @@
-import {
-  getCountries,
-  getCountryCallingCode,
-  parsePhoneNumberFromString,
-  validatePhoneNumberLength,
-} from "libphonenumber-js";
+import { parsePhoneNumberFromString, validatePhoneNumberLength } from "libphonenumber-js";
+import { countryLabel } from "./phoneCountries.js";
 
-const regionDisplayNames =
-  typeof Intl !== "undefined" ? new Intl.DisplayNames(["en"], { type: "region" }) : null;
-
-export const PHONE_COUNTRY_OPTIONS = getCountries()
-  .map((iso) => ({
-    iso,
-    dial: getCountryCallingCode(iso),
-    label: regionDisplayNames?.of(iso) ?? iso,
-  }))
-  .sort((a, b) => a.label.localeCompare(b.label));
-
-export function countryLabel(iso) {
-  return PHONE_COUNTRY_OPTIONS.find((c) => c.iso === iso)?.label ?? iso;
-}
+// Heavy (pulls in libphonenumber-js). The contact form imports this module
+// only on submit; the country dropdown uses phoneCountries.js instead.
 
 /** @returns {string} error message or "" if valid */
 export function validateNationalPhone(national, countryIso) {

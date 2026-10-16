@@ -3,7 +3,6 @@ import { C, sectionTitle, body, list, h1Style, asideStyle, LegalShell } from './
 
 export default function RefundPolicyPage() {
   useEffect(() => {
-    document.title = 'Refund & Cancellation Policy | Zanovo'
     window.scrollTo(0, 0)
   }, [])
 

@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 import { Check, Lock } from 'lucide-react'
 import { Navbar, Footer, CONTACT_EMAIL } from './site'
-import { PHONE_COUNTRY_OPTIONS, validateNationalPhone, nationalToE164 } from './lib/phoneIntl.js'
+import { PHONE_COUNTRY_OPTIONS } from './lib/phoneCountries.js'
+import { validateNationalPhone, nationalToE164 } from './lib/phoneIntl.js'
 import { trackEvent } from './lib/analytics.js'
 import { ADD_ON_MAP, formatRand, parseAddonParam } from './lib/addons.js'
 import { ALL_PLAN_MAP, PLAN_MAP } from './lib/plans.js'
@@ -75,7 +76,6 @@ export default function CheckoutPage() {
   const eftReference = 'ZANOVO-' + plan.slug.toUpperCase()
 
   useEffect(() => {
-    document.title = 'Checkout | Zanovo'
     window.scrollTo(0, 0)
   }, [])
 

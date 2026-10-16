@@ -2,7 +2,6 @@
 // Zanovo: contact-lead helpers (ported from the original site)
 // Lead validation, Supabase lead function, and invisible reCAPTCHA v3.
 // ============================================================
-import { validateNationalPhone } from './phoneIntl.js'
 import { trackEvent } from './analytics.js'
 import { getSupabaseFunctionHeaders } from './supabaseFunctions.js'
 
@@ -34,7 +33,7 @@ export const normalizeLead = (form) => ({
   website: form.website.trim(),
 })
 
-export const validateLead = (lead) => {
+export const validateLead = async (lead) => {
   if (lead.website) return 'Submission could not be accepted.'
   if (!lead.name || !lead.business || !lead.email || !lead.phone) {
     return 'Please complete all required fields.'
@@ -42,6 +41,7 @@ export const validateLead = (lead) => {
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(lead.email)) {
     return 'Please enter a valid email address.'
   }
+  const { validateNationalPhone } = await import('./phoneIntl.js')
   const phoneErr = validateNationalPhone(lead.phone, lead.phoneCountry)
   if (phoneErr) return phoneErr
   for (const [field, limit] of Object.entries(FIELD_LIMITS)) {

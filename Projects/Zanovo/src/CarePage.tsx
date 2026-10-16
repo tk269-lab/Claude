@@ -46,11 +46,7 @@ const reasons = [
 
 export default function CarePage() {
   useEffect(() => {
-    document.title = 'Zanovo Care — Website Maintenance & Support | Zanovo'
     window.scrollTo(0, 0)
-    return () => {
-      document.title = 'Web Design & Business Growth Solutions South Africa | Zanovo'
-    }
   }, [])
 
   return (

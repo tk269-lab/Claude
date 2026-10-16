@@ -129,18 +129,7 @@ export default function PlansPage() {
   const [modalPlan, setModalPlan] = useState<PlanLite | null>(null)
 
   useEffect(() => {
-    document.title = 'Your Plan & Pricing | Zanovo'
     window.scrollTo(0, 0)
-
-    const meta = document.createElement('meta')
-    meta.name = 'robots'
-    meta.content = 'noindex, nofollow'
-    document.head.appendChild(meta)
-
-    return () => {
-      document.title = 'Web Design & Business Growth Solutions South Africa | Zanovo'
-      meta.remove()
-    }
   }, [])
 
   return (

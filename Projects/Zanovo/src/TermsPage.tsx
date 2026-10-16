@@ -4,7 +4,6 @@ import { C, sectionTitle, subTitle, body, list, h1Style, asideStyle, LegalShell 
 
 export default function TermsPage() {
   useEffect(() => {
-    document.title = 'Terms of Service | Zanovo'
     window.scrollTo(0, 0)
   }, [])
 
