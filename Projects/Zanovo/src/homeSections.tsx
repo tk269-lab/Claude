@@ -192,7 +192,7 @@ export function ServicesSection() {
         <SectionLabel>Services</SectionLabel>
         <div className="flex flex-wrap items-end justify-between gap-6 mb-14">
           <h2 className="font-medium leading-[1.1] tracking-[-0.02em] text-gray-900 max-w-[500px]" style={{ fontSize: 'clamp(28px, 4vw, 48px)' }}>
-            Web design &amp; AI systems for small businesses.
+            Web design &amp; business growth solutions for small businesses.
           </h2>
           <p className="text-gray-600 max-w-[320px] text-[15px] leading-[1.75]">
             Every service we offer is scoped around a single objective: sustainable client acquisition and long-term
