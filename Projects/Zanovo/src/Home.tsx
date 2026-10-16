@@ -37,7 +37,7 @@ export default function Home() {
   const supportsShader = useSupportsShader()
 
   useEffect(() => {
-    document.title = 'Web Design & AI Systems South Africa | Zanovo'
+    document.title = 'Web Design & Business Growth Solutions South Africa | Zanovo'
   }, [])
 
   // Scroll to a section when arriving with a hash (e.g. /#contact from another page)
