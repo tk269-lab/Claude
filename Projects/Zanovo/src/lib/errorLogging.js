@@ -32,7 +32,6 @@ function report(kind, message, detail) {
     at: new Date().toISOString(),
   };
   // Always log (dev and prod) so errors are never silently swallowed
-  // eslint-disable-next-line no-console
   console.error(`[Zanovo:${kind}]`, entry.message, detail || "");
   store(entry);
   // Hook point: forward `entry` to an error-tracking service here when added.

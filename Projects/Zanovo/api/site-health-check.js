@@ -59,7 +59,8 @@ async function checkAndRecord(supabase, site) {
     statusCode = response.status;
     isUp = response.ok;
   } catch {
-    isUp = false;
+    // Unreachable host, DNS failure or timeout — the `isUp = false` default
+    // above already represents that, and statusCode stays null.
   }
 
   const latencyMs = Date.now() - started;
