@@ -49,7 +49,7 @@ export default function CarePage() {
     document.title = 'Zanovo Care — Website Maintenance & Support | Zanovo'
     window.scrollTo(0, 0)
     return () => {
-      document.title = 'Zanovo — Growth systems for ambitious brands'
+      document.title = 'Web Design & AI Systems South Africa | Zanovo'
     }
   }, [])
 

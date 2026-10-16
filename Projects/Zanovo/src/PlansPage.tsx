@@ -138,7 +138,7 @@ export default function PlansPage() {
     document.head.appendChild(meta)
 
     return () => {
-      document.title = 'Zanovo — Growth systems for ambitious brands'
+      document.title = 'Web Design & AI Systems South Africa | Zanovo'
       meta.remove()
     }
   }, [])

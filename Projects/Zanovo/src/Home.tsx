@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { useLocation } from 'react-router-dom'
-import { Shader, Swirl, ChromaFlow, FlutedGlass, FilmGrain } from 'shaders/react'
-import { Navbar, Footer, OrangeButton, ORANGE } from './site'
+import { Navbar, Footer, OrangeButton } from './site'
 import { PainSection, ServicesSection, CareSection, ProcessSection, ContactSection } from './homeSections'
+
+const HeroShader = lazy(() => import('./HeroShader'))
 
 /* The animated hero renders through WebGPU (Safari 18.2+, Chrome 121+). Older
    browsers — still common on Android and older iPhones — have no navigator.gpu,
@@ -36,7 +37,7 @@ export default function Home() {
   const supportsShader = useSupportsShader()
 
   useEffect(() => {
-    document.title = 'Zanovo — Growth systems for ambitious brands'
+    document.title = 'Web Design & AI Systems South Africa | Zanovo'
   }, [])
 
   // Scroll to a section when arriving with a hash (e.g. /#contact from another page)
@@ -56,12 +57,9 @@ export default function Home() {
       <section className="relative min-h-screen w-full flex flex-col bg-[#EFEFEF] overflow-hidden">
         <div className="absolute inset-0 z-10 pointer-events-none">
           {supportsShader ? (
-            <Shader style={{ width: '100%', height: '100%' }}>
-              <Swirl colorA="#ffffff" colorB="#f0f0f0" detail={1.7} />
-              <ChromaFlow baseColor="#ffffff" downColor={ORANGE} leftColor={ORANGE} rightColor={ORANGE} upColor={ORANGE} momentum={13} radius={3.5} />
-              <FlutedGlass aberration={0.61} angle={31} frequency={8} highlight={0.12} highlightSoftness={0} lightAngle={-90} refraction={4} shape="rounded" softness={1} speed={0.15} />
-              <FilmGrain strength={0.05} />
-            </Shader>
+            <Suspense fallback={<StaticHeroBackdrop />}>
+              <HeroShader />
+            </Suspense>
           ) : (
             <StaticHeroBackdrop />
           )}

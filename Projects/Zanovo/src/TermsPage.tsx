@@ -42,7 +42,7 @@ export default function TermsPage() {
       </p>
       <ul style={list}>
         <li><strong style={{ color: C.text }}>Email:</strong> <a href="mailto:thabiso@zanovo.co.za" style={{ color: C.accent }}>thabiso@zanovo.co.za</a></li>
-        <li><strong style={{ color: C.text }}>Website:</strong> https://zanovo.co.za</li>
+        <li><strong style={{ color: C.text }}>Website:</strong> https://www.zanovo.co.za</li>
         <li><strong style={{ color: C.text }}>Services:</strong> web design and development, AI-powered lead generation and automation systems, and ongoing website management for small businesses</li>
       </ul>
 

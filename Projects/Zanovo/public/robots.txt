@@ -37,4 +37,4 @@ Allow: /
 User-agent: Bytespider
 Disallow: /
 
-Sitemap: https://zanovo.co.za/sitemap.xml
+Sitemap: https://www.zanovo.co.za/sitemap.xml

@@ -6,9 +6,9 @@ Zanovo builds custom websites and AI-powered systems for small businesses in Cap
 
 ## Services
 
-- [Web Design & Development](https://zanovo.co.za/): Custom, fast-loading websites built for local SEO and lead generation.
-- [AI Lead Generation Systems](https://zanovo.co.za/): Automated systems that capture enquiries from web, WhatsApp, and social media 24/7.
-- [AI Automation](https://zanovo.co.za/): Custom AI workflows for client onboarding, follow-up, CRM integration, and appointment booking.
+- [Web Design & Development](https://www.zanovo.co.za/): Custom, fast-loading websites built for local SEO and lead generation.
+- [AI Lead Generation Systems](https://www.zanovo.co.za/): Automated systems that capture enquiries from web, WhatsApp, and social media 24/7.
+- [AI Automation](https://www.zanovo.co.za/): Custom AI workflows for client onboarding, follow-up, CRM integration, and appointment booking.
 
 ## About
 
@@ -19,5 +19,5 @@ Zanovo builds custom websites and AI-powered systems for small businesses in Cap
 
 ## Key Pages
 
-- [Homepage](https://zanovo.co.za/)
-- [Privacy Policy](https://zanovo.co.za/privacy)
+- [Homepage](https://www.zanovo.co.za/)
+- [Privacy Policy](https://www.zanovo.co.za/privacy)

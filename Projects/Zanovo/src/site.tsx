@@ -85,7 +85,7 @@ export function Navbar() {
               to="/"
               className="w-9 h-9 sm:w-10 sm:h-10 bg-[#0A0D12] rounded-full flex items-center justify-center overflow-hidden shrink-0"
             >
-              <img src="/zanovo-submark-transparent.png" alt="Zanovo" className="w-6 h-6 sm:w-7 sm:h-7 object-contain" />
+              <img src="/zanovo-submark-96.webp" alt="Zanovo" className="w-6 h-6 sm:w-7 sm:h-7 object-contain" />
             </Link>
             <div className="hidden md:flex items-center gap-6">
               {NAV_ITEMS.map((item) => (
@@ -135,6 +135,7 @@ export function Navbar() {
             <span className="text-[15px] font-semibold tracking-tight text-gray-900">Zanovo</span>
             <button
               onClick={() => setMenuOpen(false)}
+              aria-label="Close menu"
               className="w-9 h-9 bg-[#0A0D12] text-white rounded-full flex items-center justify-center"
             >
               <X size={18} />
@@ -175,7 +176,7 @@ export function Footer() {
       <div className="w-full max-w-[1440px] mx-auto px-5 sm:px-8 lg:px-12 pt-10 pb-6">
         <Link to="/" className="inline-flex items-center gap-2">
           <span className="w-9 h-9 bg-[#0A0D12] rounded-full flex items-center justify-center overflow-hidden">
-            <img src="/zanovo-submark-transparent.png" alt="Zanovo" className="w-6 h-6 object-contain" />
+            <img src="/zanovo-submark-96.webp" alt="Zanovo" className="w-6 h-6 object-contain" />
           </span>
           <span className="text-[15px] font-semibold tracking-tight text-gray-900">Zanovo</span>
         </Link>

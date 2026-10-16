@@ -19,7 +19,7 @@ export default function ScrollToTop() {
       style={{ rotate: '180deg' }}
     >
       <img
-        src="/zanovo-submark-transparent.png"
+        src="/zanovo-submark-96.webp"
         alt=""
         className="w-full h-full rounded-full"
         draggable={false}

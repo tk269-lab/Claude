@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import Home from './Home'
 import CarePage from './CarePage'
 import PlansPage from './PlansPage'
@@ -12,11 +12,23 @@ import ScrollToTop from './ScrollToTop'
 import { initAnalytics } from './lib/analytics'
 import { initErrorLogging } from './lib/errorLogging'
 
+const SITE_ORIGIN = 'https://www.zanovo.co.za'
+
 export default function App() {
+  const { pathname } = useLocation()
+
   useEffect(() => {
     initAnalytics()
     initErrorLogging()
   }, [])
+
+  // index.html ships one canonical for the homepage; without this every page
+  // would tell Google it is a duplicate of the homepage.
+  useEffect(() => {
+    const url = SITE_ORIGIN + pathname
+    document.querySelector('link[rel="canonical"]')?.setAttribute('href', url)
+    document.querySelector('meta[property="og:url"]')?.setAttribute('content', url)
+  }, [pathname])
 
   return (
     <>

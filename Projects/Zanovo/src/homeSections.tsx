@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import {
   Globe,
   Users,
@@ -396,9 +396,8 @@ export function ContactSection() {
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [errorMsg, setErrorMsg] = useState('')
 
-  useEffect(() => {
-    loadRecaptcha()
-  }, [])
+  // reCAPTCHA is ~350 KB, so it loads on the first interaction with the form
+  // (onFocus below), not on page open. handleSubmit calls it again as a safety net.
 
   const handleChange =
     (key: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -411,6 +410,7 @@ export function ContactSection() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    loadRecaptcha()
     setStatus('loading')
     setErrorMsg('')
 
@@ -490,7 +490,7 @@ export function ContactSection() {
             </div>
 
             {/* Right: form */}
-            <form className="flex flex-col gap-3.5" onSubmit={handleSubmit}>
+            <form className="flex flex-col gap-3.5" onSubmit={handleSubmit} onFocus={loadRecaptcha}>
               {/* Honeypot — hidden from users */}
               <input
                 type="text"
@@ -505,8 +505,11 @@ export function ContactSection() {
 
               {formFields.map(({ key, label, type, placeholder }) => (
                 <div key={key} className="flex flex-col gap-1.5">
-                  <label className="text-[13px] font-semibold text-gray-600">{label}</label>
+                  <label htmlFor={`contact-${key}`} className="text-[13px] font-semibold text-gray-600">{label}</label>
                   <input
+                    id={`contact-${key}`}
+                    name={key}
+                    autoComplete={({ name: 'name', business: 'organization', email: 'email' } as Record<string, string>)[key]}
                     type={type}
                     placeholder={placeholder}
                     required
@@ -519,7 +522,7 @@ export function ContactSection() {
               ))}
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-[13px] font-semibold text-gray-600">Phone number</label>
+                <label htmlFor="contact-phone" className="text-[13px] font-semibold text-gray-600">Phone number</label>
                 <div className="flex flex-wrap gap-2.5">
                   <select
                     value={form.phoneCountry}
@@ -533,7 +536,10 @@ export function ContactSection() {
                     ))}
                   </select>
                   <input
+                    id="contact-phone"
+                    name="phone"
                     type="tel"
+                    autoComplete="tel-national"
                     placeholder="National number"
                     required
                     maxLength={FIELD_LIMITS.phone}
@@ -549,8 +555,10 @@ export function ContactSection() {
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-[13px] font-semibold text-gray-600">Tell us about your business</label>
+                <label htmlFor="contact-message" className="text-[13px] font-semibold text-gray-600">Tell us about your business</label>
                 <textarea
+                  id="contact-message"
+                  name="message"
                   rows={3}
                   placeholder="What does your business do and what is your biggest challenge right now?"
                   maxLength={FIELD_LIMITS.message}
