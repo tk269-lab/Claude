@@ -306,7 +306,7 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ error: "Not configured." }), { status: 500 });
   }
 
-  let body: { type?: string } = {};
+  let body: { type?: string };
   try {
     body = await req.json();
   } catch {

@@ -14,7 +14,7 @@ Live site www.zanovo.co.za: AI-powered websites, lead capture and automation for
 
 ## Verify
 
-`npm run build` (`tsc -b` is the real type check) + `npm run lint` + browser preview. There is no test suite; don't add one unprompted. Lint only covers `.js`/`.jsx`.
+`npm run build` (`tsc -b` is the real type check) + `npm run lint` + browser preview. There is no test suite; don't add one unprompted. Lint covers `.js`, `.jsx`, `.ts` and `.tsx` (typescript-eslint, non-type-checked).
 
 ## Gotchas
 

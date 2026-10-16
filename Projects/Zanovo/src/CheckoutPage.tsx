@@ -62,7 +62,7 @@ export default function CheckoutPage() {
   const [method, setMethod] = useState<'eft' | 'card'>('card')
   const [form, setForm] = useState(EMPTY)
   const [errors, setErrors] = useState<Record<string, string>>({})
-  const [paystackReady, setPaystackReady] = useState(false)
+  const [paystackReady, setPaystackReady] = useState(() => Boolean(document.getElementById('paystack-js')))
   const [cardStatus, setCardStatus] = useState<'idle' | 'loading' | 'error'>('idle')
   const [success, setSuccess] = useState<'card' | 'eft' | null>(null)
 
@@ -81,10 +81,7 @@ export default function CheckoutPage() {
 
   // Load Paystack inline script
   useEffect(() => {
-    if (document.getElementById('paystack-js')) {
-      setPaystackReady(true)
-      return
-    }
+    if (document.getElementById('paystack-js')) return
     const s = document.createElement('script')
     s.id = 'paystack-js'
     s.src = 'https://js.paystack.co/v1/inline.js'

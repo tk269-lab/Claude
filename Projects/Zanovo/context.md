@@ -22,7 +22,6 @@ Dashboard `../zanovo-dashboard/CLAUDE.md` · Runway `../runway/AGENTS.md` · Hap
 - Disable the Google OAuth provider in Supabase (unused but still enabled server-side).
 - Orphaned `profiles` table and old user accounts: decide whether to clean up.
 - Shader hero is about 365 KB gzipped (shaders + three.js) and now downloads only when `navigator.gpu.requestAdapter()` returns an adapter; everyone else gets the static gradient. Still untested on a real mid-range Android over mobile data.
-- Add typescript-eslint so lint covers `.tsx`.
 - `api/site-health-check.js` still has a stale `TODO` saying push isn't sent; the dashboard's migration 0011 trigger now sends site-down pushes.
 
 ## Automation engine (`../zanovo-automation`)

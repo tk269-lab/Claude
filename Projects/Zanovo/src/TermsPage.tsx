@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { C, sectionTitle, subTitle, body, list, h1Style, asideStyle, LegalShell } from './legal'
+import { C, sectionTitle, subTitle, body, list, h1Style, asideStyle } from './legalStyles'
+import { LegalShell } from './legal'
 
 export default function TermsPage() {
   useEffect(() => {

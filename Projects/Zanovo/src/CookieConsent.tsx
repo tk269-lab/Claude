@@ -1,14 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getConsent, setConsent, loadGA, trackEvent } from './lib/analytics'
 
 /* POPIA-friendly cookie banner — GA only loads after the visitor accepts. */
 export default function CookieConsent() {
-  const [show, setShow] = useState(false)
-
-  useEffect(() => {
-    if (!getConsent()) setShow(true)
-  }, [])
+  const [show, setShow] = useState(() => !getConsent())
 
   const accept = () => {
     setConsent('granted')

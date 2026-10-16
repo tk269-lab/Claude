@@ -297,7 +297,7 @@ const notifyAdminAlert = async (context: string, detail: string) => {
   try {
     const params = new URLSearchParams({ phone, text, apikey: apiKey });
     await fetch(`https://api.callmebot.com/whatsapp.php?${params}`);
-  } catch (_) {
+  } catch {
     // never throw from the alerter
   }
 };

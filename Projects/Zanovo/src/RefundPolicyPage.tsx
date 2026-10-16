@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
-import { C, sectionTitle, body, list, h1Style, asideStyle, LegalShell } from './legal'
+import { C, sectionTitle, body, list, h1Style, asideStyle } from './legalStyles'
+import { LegalShell } from './legal'
 
 export default function RefundPolicyPage() {
   useEffect(() => {

@@ -13,7 +13,7 @@ async function notifyAdminAlert(context: string, detail: string): Promise<void> 
   try {
     const params = new URLSearchParams({ phone, text, apikey: apiKey });
     await fetch(`https://api.callmebot.com/whatsapp.php?${params}`);
-  } catch (_) {
+  } catch {
     // swallow — the alerter must never throw
   }
 }
